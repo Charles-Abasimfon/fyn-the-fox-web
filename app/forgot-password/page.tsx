@@ -100,7 +100,7 @@ const ForgotPasswordPage: React.FC = () => {
 
   if (isEmailSent) {
     return (
-      <div className='min-h-screen relative overflow-hidden bg-gray-900 lg:grid lg:grid-cols-2'>
+      <div className='min-h-screen relative overflow-hidden bg-[#000000] lg:grid lg:grid-cols-2'>
         {/* Left side with fox character - hidden on mobile, shown on lg+ */}
         <div className="hidden lg:block relative overflow-hidden bg-[url('/images/auth-bg2.png')] bg-no-repeat bg-center bg-cover">
           <div className='flex flex-col justify-end h-full'>
@@ -110,7 +110,7 @@ const ForgotPasswordPage: React.FC = () => {
               className='absolute w-full bottom-0'
             />
             <div className='relative z-10 text-white p-8'>
-              <h2 className='text-2xl xl:text-3xl font-bold mb-2'>
+              <h2 className='text-2xl xl:text-3xl font-semibold mb-2'>
                 Check Your Email
               </h2>
               <p className='text-[#D6D6D6] text-base xl:text-lg font-medium'>
@@ -121,7 +121,7 @@ const ForgotPasswordPage: React.FC = () => {
         </div>
 
         {/* Right side with success message */}
-        <div className='w-full bg-gray-800 lg:bg-gray-800 bg-gradient-to-br from-gray-800 to-gray-900 lg:bg-none flex flex-col justify-center items-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 relative z-20 min-h-screen lg:min-h-auto'>
+        <div className='w-full bg-[#141414] lg:bg-none flex flex-col justify-center items-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 relative z-20 min-h-screen lg:min-h-auto'>
           {/* Mobile background decoration */}
           <div className='lg:hidden absolute inset-0 opacity-10'>
             <div className='absolute top-10 right-10 w-32 h-32 bg-primary rounded-full blur-3xl'></div>
@@ -179,7 +179,7 @@ const ForgotPasswordPage: React.FC = () => {
               {/* Back to Sign In */}
               <Link
                 href='/sign-in'
-                className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm sm:text-base rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors flex items-center justify-center gap-2'
+                className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors flex items-center justify-center gap-2'
               >
                 <ArrowLeft className='w-4 h-4' />
                 Back to Sign In
@@ -192,7 +192,7 @@ const ForgotPasswordPage: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setIsEmailSent(false)}
-                  className='text-sm text-primary hover:underline font-medium'
+                  className='text-sm text-primary hover:underline font-medium cursor-pointer'
                 >
                   Try again
                 </button>
@@ -205,7 +205,7 @@ const ForgotPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className='min-h-screen relative overflow-hidden bg-gray-900 lg:grid lg:grid-cols-2'>
+    <div className='min-h-screen relative overflow-hidden bg-[#000000] lg:grid lg:grid-cols-2'>
       {/* Left side with fox character - hidden on mobile, shown on lg+ */}
       <div className="hidden lg:block relative overflow-hidden bg-[url('/images/auth-bg2.png')] bg-no-repeat bg-center bg-cover">
         <div className='flex flex-col justify-end h-full'>
@@ -234,17 +234,7 @@ const ForgotPasswordPage: React.FC = () => {
           <div className='absolute bottom-20 left-10 w-24 h-24 bg-primary/60 rounded-full blur-2xl'></div>
         </div>
 
-        {/* <div className='mb-4 sm:mb-6'>
-          <Link
-            href='/sign-in'
-            className='inline-flex items-center text-sm text-[#B7B7B8] hover:text-white transition-colors'
-          >
-            <ArrowLeft className='w-4 h-4 mr-2' />
-            Back to Sign In
-          </Link>
-        </div> */}
-
-        <div className='w-full max-w-md relative z-10'>
+        <div className='w-full max-w-md relative z-10 bg-[#141414]  py-12 px-8 rounded-[22px]'>
           {/* Logo and Title */}
           <div className='mb-6 sm:mb-8'>
             <div className='flex items-center justify-center mb-5 sm:mb-10'>
@@ -254,10 +244,10 @@ const ForgotPasswordPage: React.FC = () => {
                 className='w-32 sm:w-36 h-auto'
               />
             </div>
-            <h1 className='text-xl sm:text-2xl font-semibold text-white mb-2 text-center sm:text-left'>
+            <h1 className='text-xl font-regular text-white mb-2 text-center sm:text-left'>
               Forgot your password?
             </h1>
-            <p className='text-[#B7B7B8] text-sm sm:text-base text-center sm:text-left'>
+            <p className='text-[#B7B7B8] text-sm text-center sm:text-left'>
               No worries! Enter your email address and we'll send you
               instructions to reset your password.
             </p>
@@ -287,7 +277,7 @@ const ForgotPasswordPage: React.FC = () => {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 disabled={isLoading}
-                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
+                className={`w-full px-3 sm:px-4 py-2.5 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
                   formik.touched.email && formik.errors.email
                     ? 'border-red-500 bg-red-900 bg-opacity-20'
                     : ''
@@ -306,11 +296,9 @@ const ForgotPasswordPage: React.FC = () => {
               type='button'
               onClick={formik.handleSubmit}
               disabled={isLoading}
-              className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm sm:text-base rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              {isLoading
-                ? 'Submitting...'
-                : 'Submit'}
+              {isLoading ? 'Submitting...' : 'Submit'}
             </button>
 
             {/* Remember Password? */}

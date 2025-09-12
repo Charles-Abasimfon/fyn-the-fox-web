@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
-// Formik-like validation hook (keeping your existing implementation)
 const useFormik = (config: any) => {
   const [values, setValues] = useState(config.initialValues);
   const [errors, setErrors] = useState<any>({});
@@ -56,7 +55,6 @@ const useFormik = (config: any) => {
 
 const SignInPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
@@ -111,7 +109,7 @@ const SignInPage: React.FC = () => {
   });
 
   return (
-    <div className='min-h-screen relative overflow-hidden bg-gray-900 lg:grid lg:grid-cols-2'>
+    <div className='min-h-screen relative overflow-hidden bg-[#000000] lg:grid lg:grid-cols-2'>
       {/* Left side with fox character - hidden on mobile, shown on lg+ */}
       <div className="hidden lg:block relative overflow-hidden bg-[url('/images/auth-bg2.png')] bg-no-repeat bg-center bg-cover">
         <div className='flex flex-col justify-end h-full'>
@@ -140,9 +138,9 @@ const SignInPage: React.FC = () => {
           <div className='absolute bottom-20 left-10 w-24 h-24 bg-primary/60 rounded-full blur-2xl'></div>
         </div>
 
-        <div className='w-full max-w-md relative z-10'>
+        <div className='w-full max-w-md relative z-10 bg-[#141414] py-12 px-8 rounded-[22px]'>
           {/* Logo and Title */}
-          <div className='mb-6 sm:mb-8'>
+          <div className='mb-4'>
             <div className='flex items-center justify-center mb-4 sm:mb-6'>
               <img
                 src='/logos/logo.svg'
@@ -150,12 +148,12 @@ const SignInPage: React.FC = () => {
                 className='w-32 sm:w-36 h-auto'
               />
             </div>
-            <h1 className='text-xl sm:text-2xl font-semibold text-white mb-2 text-center sm:text-left'>
+            <h1 className='text-xl font-regular text-white mb-2 text-center sm:text-left'>
               Welcome back, Sign-In to continue
             </h1>
           </div>
 
-          <div className='space-y-4 sm:space-y-6 w-full'>
+          <div className='space-y-4 w-full'>
             {/* Login Error Message */}
             {loginError && (
               <div className='p-3 text-sm text-red-400 bg-red-900 bg-opacity-50 border border-red-700 rounded-lg'>
@@ -167,7 +165,7 @@ const SignInPage: React.FC = () => {
             <div>
               <label
                 htmlFor='email'
-                className='block text-base font-medium text-white mb-2'
+                className='block text-sm font-regular text-white mb-2'
               >
                 Email
               </label>
@@ -179,7 +177,7 @@ const SignInPage: React.FC = () => {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 disabled={isLoading}
-                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
+                className={`w-full px-3 sm:px-4 py-2.5 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
                   formik.touched.email && formik.errors.email
                     ? 'border-red-500 bg-red-900 bg-opacity-20'
                     : ''
@@ -197,7 +195,7 @@ const SignInPage: React.FC = () => {
             <div>
               <label
                 htmlFor='password'
-                className='block text-base font-medium text-white mb-2'
+                className='block text-sm font-regular text-white mb-2'
               >
                 Password
               </label>
@@ -210,7 +208,7 @@ const SignInPage: React.FC = () => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   disabled={isLoading}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
+                  className={`w-full px-3 sm:px-4 py-2.5 pr-10 sm:pr-12 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
                     formik.touched.password && formik.errors.password
                       ? 'border-red-500 bg-red-900 bg-opacity-20'
                       : ''
@@ -221,7 +219,7 @@ const SignInPage: React.FC = () => {
                   type='button'
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  className='absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 disabled:opacity-50'
+                  className='absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 disabled:opacity-50 cursor-pointer'
                 >
                   {showPassword ? (
                     <EyeOff className='w-4 h-4 sm:w-5 sm:h-5' />
@@ -252,20 +250,30 @@ const SignInPage: React.FC = () => {
               type='button'
               onClick={formik.handleSubmit}
               disabled={isLoading}
-              className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm sm:text-base rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLoading ? 'Signing in...' : 'Sign-In'}
             </button>
 
             {/* Terms and Privacy */}
-            <div className='text-center text-sm sm:text-base font-medium text-[#B7B7B8] mt-4 sm:mt-6'>
+            <div className='text-center text-sm font-medium text-[#B7B7B8] mt-2'>
               <p className='leading-relaxed'>
                 By signing in or creating account, you agree with our{' '}
-                <Link href='/terms' className='text-primary hover:underline'>
+                <Link
+                  href='https://www.fynthefox.ai/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-primary hover:underline'
+                >
                   Terms & conditions
                 </Link>{' '}
                 &{' '}
-                <Link href='/privacy' className='text-primary hover:underline'>
+                <Link
+                  href='https://www.fynthefox.ai/'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-primary hover:underline'
+                >
                   Privacy policy
                 </Link>
               </p>
