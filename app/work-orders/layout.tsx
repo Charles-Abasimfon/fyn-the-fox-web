@@ -7,7 +7,7 @@ interface WorkOrdersLayoutProps {
 
 export default function WorkOrdersLayout({ children }: WorkOrdersLayoutProps) {
   return (
-    <div className='p-8'>
+    <div className='p-4 md:p-8'>
       <header>
         <TopBar />
       </header>

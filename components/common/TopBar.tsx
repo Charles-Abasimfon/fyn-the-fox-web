@@ -18,6 +18,7 @@ import {
   LogOutIcon,
   UserIcon,
   ChevronRightIcon,
+  MenuIcon,
 } from 'lucide-react';
 
 interface NavItem {
@@ -50,26 +51,19 @@ const TopBar = () => {
 
   return (
     <div className='backdrop-blur-md text-white border border-white/20 rounded-[22px]'>
-      <div className='flex items-center justify-between px-6 py-3'>
+      <div className='flex items-center justify-between px-3 py-2 md:px-6'>
         {/* Logo */}
-        <div className='flex items-center space-x-6'>
-          <div className='flex items-center space-x-2'>
-            <Image
-              src='/logos/logo.svg'
-              alt='Fyn Logo'
-              width={80}
-              height={80}
-            />
-          </div>
+        <div className='flex items-center gap-3'>
+          <Image src='/logos/logo.svg' alt='Fyn Logo' width={64} height={64} />
         </div>
 
         {/* Navigation */}
-        <div className='flex items-center bg-[#FFFFFF0D] rounded-sm overflow-hidden border border-white/20'>
+        <div className='hidden md:flex items-center bg-[#FFFFFF0D] rounded-sm overflow-hidden border border-white/20'>
           {navItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleNavigation(item.href)}
-              className={`px-6 py-2 text-lg font-medium transition-colors hover:bg-gray-600 ${
+              className={`px-6 py-2 text-base font-medium transition-colors hover:bg-gray-600 ${
                 item.isActive
                   ? 'bg-[#141414] text-white hover:bg-gray-600'
                   : 'text-white'
@@ -81,23 +75,56 @@ const TopBar = () => {
         </div>
 
         {/* User Profile Dropdown */}
-        <div className='flex items-center'>
+        <div className='flex items-center gap-2'>
+          {/* Mobile nav (hamburger) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className='flex items-center space-x-2 px-3 py-2 rounded-lg bg-[#FAFAFA14] border border-[#FFFFFF05] hover:bg-gray-800'>
-                <div className='flex items-center space-x-2'>
-                  <div className='w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center'>
-                    <span className='text-sm font-medium'>JD</span>
+              <button
+                className='md:hidden inline-flex items-center justify-center size-9 p-0 rounded-lg bg-[#FAFAFA14] border border-[#FFFFFF05] hover:bg-gray-800'
+                aria-label='Open navigation menu'
+              >
+                <MenuIcon className='w-5 h-5' />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align='start'
+              className='w-56 bg-[#27272B] text-[#FFFFFF] font-semibold border border-[#434343]'
+            >
+              {/* <DropdownMenuLabel>Navigate</DropdownMenuLabel>
+              <DropdownMenuSeparator className='bg-[#434343]' /> */}
+              {navItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.label}
+                  className={item.isActive ? 'bg-[#141414]' : ''}
+                  onSelect={() => handleNavigation(item.href)}
+                >
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* User menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className='inline-flex items-center justify-center size-9 p-0 md:h-auto md:w-auto md:px-3 md:py-2 md:gap-2 rounded-lg bg-[#FAFAFA14] border border-[#FFFFFF05] hover:bg-gray-800'
+                aria-label='Open user menu'
+              >
+                <div className='size-5 md:size-8 rounded-full bg-gray-600 flex items-center justify-center shrink-0'>
+                  <span className='text-[10px] md:text-sm font-medium'>JD</span>
+                </div>
+                {/* Details hidden on mobile, shown on md+ */}
+                <div className='hidden md:block text-left'>
+                  <div className='text-base font-semibold leading-none'>
+                    John Doe
                   </div>
-                  <div className='text-left'>
-                    <div className='text-base font-semibold'>John Doe</div>
-                    <div className='text-[10px] text-[#F9FAFB] font-medium'>
-                      nelson@example.com
-                    </div>
+                  <div className='text-[10px] text-[#F9FAFB] font-medium'>
+                    nelson@example.com
                   </div>
-                  <div className='flex items-center justify-center bg-[#F9FAFB0A] border border-[#F2F4F705] rounded-[6px] p-1 ml-6'>
-                    <ChevronRightIcon className='w-4 h-4 text-[#A0A6B1]' />
-                  </div>
+                </div>
+                <div className='hidden md:flex items-center justify-center bg-[#F9FAFB0A] border border-[#F2F4F705] rounded-[6px] p-1 ml-1 md:ml-3'>
+                  <ChevronRightIcon className='w-4 h-4 text-[#A0A6B1]' />
                 </div>
               </button>
             </DropdownMenuTrigger>

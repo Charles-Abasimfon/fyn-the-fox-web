@@ -7,7 +7,7 @@ interface VendorsLayoutProps {
 
 export default function VendorsLayout({ children }: VendorsLayoutProps) {
   return (
-    <div className='p-8'>
+    <div className='p-4 md:p-8'>
       <header>
         <TopBar />
       </header>

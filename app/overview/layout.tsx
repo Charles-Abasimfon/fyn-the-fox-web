@@ -7,7 +7,7 @@ interface OverviewLayoutProps {
 
 export default function OverviewLayout({ children }: OverviewLayoutProps) {
   return (
-    <div className='p-8'>
+    <div className='p-4 md:p-8'>
       <header className='overview-header'>
         <TopBar />
       </header>

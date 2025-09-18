@@ -204,7 +204,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
             Recent complaints
           </h2>
         </div>
-        <div className='inline-flex items-stretch rounded-md border border-[#434343] overflow-hidden'>
+        <div className='flex w-full flex-col items-stretch rounded-md border border-[#434343] overflow-hidden sm:inline-flex sm:w-auto sm:flex-row sm:divide-x sm:divide-[#434343]'>
           {/* Status filter - styled like Select and merged into the group */}
           <Select
             value={statusFilter}
@@ -212,7 +212,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
           >
             <SelectTrigger
               size='default'
-              className='min-w-[160px] justify-between bg-transparent border-0 rounded-none text-white h-9 px-4 cursor-pointer'
+              className='w-full min-w-0 justify-between bg-transparent border-0 border-b border-[#434343] sm:border-b-0 rounded-none text-white h-9 px-4 cursor-pointer sm:w-auto sm:min-w-[160px]'
             >
               <SelectValue placeholder='All status' />
             </SelectTrigger>
@@ -233,14 +233,13 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
             </SelectContent>
           </Select>
 
-          {/* Divider between the two segments */}
-          <div className='w-px bg-[#434343]' aria-hidden />
+          {/* Mobile separation is handled via a bottom border on the Status trigger */}
 
           {/* Date filter - Popover with single-date Calendar, caret only */}
           <Popover>
             <PopoverTrigger asChild>
               <button
-                className='data-[placeholder]:text-muted-foreground flex items-center justify-between gap-2 bg-transparent h-9 px-4 text-sm text-white whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:opacity-50 rounded-none border-0 hover:bg-transparent hover:text-white w-[180px] cursor-pointer'
+                className='data-[placeholder]:text-muted-foreground flex items-center justify-between gap-2 bg-transparent h-9 px-4 text-sm text-white whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:opacity-50 rounded-none border-0 hover:bg-transparent hover:text-white w-full min-w-0 cursor-pointer sm:w-[180px]'
                 aria-label='Custom date'
               >
                 <span className='truncate'>{dateLabel}</span>

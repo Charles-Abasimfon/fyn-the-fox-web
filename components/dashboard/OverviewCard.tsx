@@ -47,7 +47,7 @@ const OverviewCard: React.FC<OverviewCardProps> = ({
       </div>
       {/* Footer with update time and link */}
       <div className='flex items-center justify-between'>
-        <p className='text-[#BDBDBE] text-xs'>Updated {updatedTime}</p>
+        {/* <p className='text-[#BDBDBE] text-xs'>Updated {updatedTime}</p> */}
         <Link
           href={linkHref}
           className={`text-primary text-xs font-semibold flex items-center gap-1 transition-colors hover:bg-primary hover:text-white p-1.5 rounded`}
