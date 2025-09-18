@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const useFormik = (config: any) => {
   const [values, setValues] = useState(config.initialValues);
@@ -57,6 +58,7 @@ const SignInPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const router = useRouter();
 
   const formik = useFormik({
     initialValues: {
@@ -97,8 +99,8 @@ const SignInPage: React.FC = () => {
         // Example success handling
         console.log('Login successful');
 
-        // Redirect logic can be added here
-        // router.push('/dashboard');
+        // Redirect to overview page after successful login
+        router.push('/overview');
       } catch (error) {
         console.error('Login error:', error);
         setLoginError('An error occurred during login');
@@ -109,7 +111,7 @@ const SignInPage: React.FC = () => {
   });
 
   return (
-    <div className='min-h-screen relative overflow-hidden bg-[#000000] lg:grid lg:grid-cols-2'>
+    <div className='min-h-screen relative overflow-hidden bg-[#101014] lg:grid lg:grid-cols-2'>
       {/* Left side with fox character - hidden on mobile, shown on lg+ */}
       <div className="hidden lg:block relative overflow-hidden bg-[url('/images/auth-bg2.png')] bg-no-repeat bg-center bg-cover">
         <div className='flex flex-col justify-end h-full'>
@@ -132,12 +134,6 @@ const SignInPage: React.FC = () => {
 
       {/* Right side with form */}
       <div className='w-full lg:bg-none flex flex-col justify-center items-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8 relative z-20 min-h-screen lg:min-h-auto'>
-        {/* Mobile background decoration */}
-        <div className='lg:hidden absolute inset-0 opacity-10'>
-          <div className='absolute top-10 right-10 w-32 h-32 bg-primary rounded-full blur-3xl'></div>
-          <div className='absolute bottom-20 left-10 w-24 h-24 bg-primary/60 rounded-full blur-2xl'></div>
-        </div>
-
         <div className='w-full max-w-md relative z-10 bg-[#141414] py-12 px-8 rounded-[22px]'>
           {/* Logo and Title */}
           <div className='mb-4'>
