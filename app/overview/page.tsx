@@ -218,7 +218,7 @@ const OverviewPage = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className='grid grid-cols-1 lg:grid-cols-4 gap-6 mt-8'>
+      <div className='grid grid-cols-1 lg:grid-cols-4 gap-6 mt-12g'>
         {/* Complaints Table - Takes 2/3 of the space on large screens */}
         <div className='lg:col-span-3'>
           <ComplaintsTable complaints={complaintsData} />

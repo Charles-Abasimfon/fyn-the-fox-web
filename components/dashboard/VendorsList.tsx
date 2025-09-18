@@ -35,7 +35,7 @@ const getStatusIcon = (status: string) => {
 
 const VendorsList: React.FC<VendorsListProps> = ({ vendors }) => {
   return (
-    <div className=' rounded-lg mt-8 overflow-hidden'>
+    <div className=' rounded-lg overflow-hidden'>
       {/* Header */}
       <div className='mb-6 bg-[#FFFFFF0D] p-3'>
         <h2 className='text-white text-lg font-bold'>Vendors</h2>

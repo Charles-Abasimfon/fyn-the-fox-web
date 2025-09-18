@@ -64,7 +64,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #F77F00;
+  --primary: #f77f00;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -131,5 +131,29 @@
   }
   body {
     @apply text-foreground font-sans;
+  }
+}
+
+/* Custom scrollbar utility used for scrollable panels (e.g., dialog body) */
+@layer utilities {
+  .custom-scrollbar {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #3a3a3a transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #3a3a3a; /* thumb color */
+    border-radius: 9999px;
+    border: 2px solid #201f1f; /* matches panel bg to create spacing */
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #4a4a4a;
   }
 }
