@@ -60,7 +60,7 @@ const CustomDialog = ({
               // Mobile: full screen with rounded top corners
               'w-full h-full bg-[#201F1F] rounded-t-2xl shadow-lg overflow-hidden flex flex-col',
               // Desktop: fixed width side sheet with all rounded corners
-              'sm:w-[560px] sm:max-w-[calc(100vw-6rem)] sm:h-full sm:max-h-full sm:rounded-2xl'
+              'sm:w-[640px] sm:max-w-[calc(100vw-6rem)] sm:h-full sm:max-h-full sm:rounded-2xl'
             )}
           >
             {children}
