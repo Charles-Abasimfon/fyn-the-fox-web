@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { forgotPassword } from '@/lib/api/auth';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -58,6 +59,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [resetError, setResetError] = useState('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
   const formik = useFormik({
     initialValues: {
@@ -79,19 +81,18 @@ const ForgotPasswordPage: React.FC = () => {
     onSubmit: async (values: any) => {
       setIsLoading(true);
       setResetError('');
-
+      setSuccessMessage('');
       try {
-        // Simulate password reset request
-        console.log('Password reset requested for:', values.email);
-
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Set success state
+        const res = await forgotPassword({ email: values.email });
+        setSuccessMessage(
+          res.message || 'If an account exists, a reset link has been sent.'
+        );
         setIsEmailSent(true);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Password reset error:', error);
-        setResetError('An error occurred while sending the reset email');
+        setResetError(
+          error?.message || 'An error occurred while sending the reset email'
+        );
       } finally {
         setIsLoading(false);
       }
@@ -114,7 +115,8 @@ const ForgotPasswordPage: React.FC = () => {
                 Check Your Email
               </h2>
               <p className='text-[#D6D6D6] text-base xl:text-lg font-medium'>
-                We've sent you instructions to reset your password.
+                {successMessage ||
+                  "We've sent you instructions to reset your password."}
               </p>
             </div>
           </div>
@@ -142,7 +144,7 @@ const ForgotPasswordPage: React.FC = () => {
                 Check Your Email
               </h1>
               <p className='text-center text-[#B7B7B8] text-sm sm:text-base'>
-                We've sent password reset instructions to{' '}
+                {successMessage || "We've sent password reset instructions"} to{' '}
                 <span className='text-primary font-medium'>
                   {formik.values.email}
                 </span>
@@ -171,8 +173,8 @@ const ForgotPasswordPage: React.FC = () => {
                   Email Sent Successfully!
                 </h3>
                 <p className='text-sm text-green-200'>
-                  Please check your inbox and follow the instructions to reset
-                  your password.
+                  {successMessage ||
+                    'Please check your inbox and follow the instructions to reset your password.'}
                 </p>
               </div>
 
@@ -191,7 +193,11 @@ const ForgotPasswordPage: React.FC = () => {
                   Didn't receive the email?
                 </p>
                 <button
-                  onClick={() => setIsEmailSent(false)}
+                  onClick={() => {
+                    setIsEmailSent(false);
+                    setSuccessMessage('');
+                    setResetError('');
+                  }}
                   className='text-sm text-primary hover:underline font-medium cursor-pointer'
                 >
                   Try again
@@ -295,10 +301,15 @@ const ForgotPasswordPage: React.FC = () => {
             <button
               type='button'
               onClick={formik.handleSubmit}
-              disabled={isLoading}
+              disabled={
+                isLoading ||
+                !formik.values.email ||
+                !!(formik.touched.email && formik.errors.email)
+              }
               className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+              aria-busy={isLoading}
             >
-              {isLoading ? 'Submitting...' : 'Submit'}
+              {isLoading ? 'Sending...' : 'Send reset instructions'}
             </button>
 
             {/* Remember Password? */}

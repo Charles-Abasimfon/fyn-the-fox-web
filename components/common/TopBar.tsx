@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,6 +31,8 @@ interface NavItem {
 const TopBar = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const sessionResult = useSession();
+  const session = sessionResult?.data;
 
   const navItems: NavItem[] = [
     {
@@ -48,6 +51,18 @@ const TopBar = () => {
   const handleNavigation = (href: string) => {
     router.push(href);
   };
+
+  const userInitials = React.useMemo(() => {
+    const name = session?.user?.name || '';
+    return (
+      name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((n) => n[0]?.toUpperCase())
+        .join('') || 'UU'
+    );
+  }, [session?.user?.name]);
 
   return (
     <div className='backdrop-blur-md text-white border border-white/20 rounded-[22px]'>
@@ -112,15 +127,17 @@ const TopBar = () => {
                 aria-label='Open user menu'
               >
                 <div className='size-5 md:size-8 rounded-full bg-gray-600 flex items-center justify-center shrink-0'>
-                  <span className='text-[10px] md:text-sm font-medium'>JD</span>
+                  <span className='text-[10px] md:text-sm font-medium'>
+                    {userInitials}
+                  </span>
                 </div>
                 {/* Details hidden on mobile, shown on md+ */}
                 <div className='hidden md:block text-left'>
                   <div className='text-base font-semibold leading-none'>
-                    John Doe
+                    {session?.user?.name || 'User'}
                   </div>
                   <div className='text-[10px] text-[#F9FAFB] font-medium'>
-                    nelson@example.com
+                    {session?.user?.email || 'Email'}
                   </div>
                 </div>
                 <div className='hidden md:flex items-center justify-center bg-[#F9FAFB0A] border border-[#F2F4F705] rounded-[6px] p-1 ml-1 md:ml-3'>
@@ -143,7 +160,7 @@ const TopBar = () => {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator className='bg-[#434343]' />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/sign-in' })}>
                 <LogOutIcon className='w-4 h-4 mr-2' />
                 Log out
               </DropdownMenuItem>

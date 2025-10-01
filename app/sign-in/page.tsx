@@ -1,119 +1,115 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 
-const useFormik = (config: any) => {
-  const [values, setValues] = useState(config.initialValues);
-  const [errors, setErrors] = useState<any>({});
-  const [touched, setTouched] = useState<any>({});
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setValues((prev: any) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name } = e.target;
-    setTouched((prev: any) => ({ ...prev, [name]: true }));
-
-    if (config.validate) {
-      const validationErrors = config.validate(values);
-      setErrors(validationErrors);
-    }
-  };
-
-  const handleSubmit = () => {
-    const touchedFields = Object.keys(values).reduce((acc, key) => {
-      acc[key] = true;
-      return acc;
-    }, {} as any);
-    setTouched(touchedFields);
-
-    const validationErrors = config.validate ? config.validate(values) : {};
-    setErrors(validationErrors);
-
-    if (Object.keys(validationErrors).length === 0) {
-      config.onSubmit(values);
-    }
-  };
-
-  return {
-    values,
-    errors,
-    touched,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  };
-};
-
-const SignInPage: React.FC = () => {
+function SignInInner() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { status } = useSession();
 
-  const formik = useFormik({
-    initialValues: {
-      email: '',
-      password: '',
-    },
-    validate: (values: any) => {
-      const errors: any = {};
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/overview');
+    }
+  }, [status, router]);
 
-      if (!values.email) {
-        errors.email = 'Email is required';
-      } else if (
-        !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
-      ) {
-        errors.email = 'Invalid email address';
-      }
+  // Handle next-auth error messages via query param
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      const map: Record<string, string> = {
+        CredentialsSignin: 'Invalid email or password',
+        AccessDenied: 'Access denied',
+        SessionRequired: 'Please sign in to continue',
+        default: 'Authentication failed',
+      };
+      setLoginError(map[error] || map.default);
+    }
+  }, [searchParams]);
 
-      if (!values.password) {
-        errors.password = 'Password is required';
-      } else if (values.password.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
-      }
-
-      return errors;
-    },
-    onSubmit: async (values: any) => {
-      setIsLoading(true);
-      setLoginError('');
-
-      try {
-        // Simulate form submission
-        console.log('Form submitted with values:', values);
-
-        // You can add your authentication logic here
-        // For now, just simulate a delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Example success handling
-        console.log('Login successful');
-
-        // Redirect to overview page after successful login
-        router.push('/overview');
-      } catch (error) {
-        console.error('Login error:', error);
-        setLoginError('An error occurred during login');
-      } finally {
-        setIsLoading(false);
-      }
-    },
+  const [values, setValues] = useState({ email: '', password: '' });
+  const [touched, setTouched] = useState<{
+    email?: boolean;
+    password?: boolean;
+  }>({
+    email: false,
+    password: false,
   });
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({
+    email: '',
+    password: '',
+  });
+
+  const validate = (vals: typeof values) => {
+    const errs: typeof errors = {};
+    if (!vals.email) errs.email = 'Email is required';
+    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(vals.email))
+      errs.email = 'Invalid email address';
+    if (!vals.password) errs.password = 'Password is required';
+    else if (vals.password.length < 6)
+      errs.password = 'Password must be at least 6 characters';
+    return errs;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setValues((v) => ({ ...v, [name]: value }));
+    if (touched[name as keyof typeof touched]) {
+      setErrors(validate({ ...values, [name]: value }));
+    }
+  };
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTouched((t) => ({ ...t, [name]: true }));
+    setErrors(validate(values));
+  };
+
+  const handleSubmit = async () => {
+    const newTouched = { email: true, password: true };
+    setTouched(newTouched);
+    const validationErrors = validate(values);
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
+    setIsLoading(true);
+    setLoginError('');
+    try {
+      const res = await signIn('credentials', {
+        redirect: false,
+        email: values.email,
+        password: values.password,
+        callbackUrl: '/overview',
+      });
+      if (!res) {
+        setLoginError('No response from server');
+      } else if (res.error) {
+        setLoginError(
+          res.error === 'CredentialsSignin'
+            ? 'Invalid email or password'
+            : res.error
+        );
+      } else if (res.ok) {
+        router.push(res.url || '/overview');
+      }
+    } catch (e: any) {
+      setLoginError(e.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className='min-h-screen relative overflow-hidden bg-[#101014] lg:grid lg:grid-cols-2'>
       {/* Left side with fox character - hidden on mobile, shown on lg+ */}
-      <div className="hidden lg:block relative overflow-hidden bg-[url('/images/auth-bg2.png')] bg-no-repeat bg-center bg-cover">
+      <div className='hidden lg:block relative overflow-hidden bg-[url("/images/auth-bg2.png")] bg-no-repeat bg-center bg-cover'>
         <div className='flex flex-col justify-end h-full'>
           <img
             src='/images/bg1.png'
@@ -169,21 +165,19 @@ const SignInPage: React.FC = () => {
                 type='email'
                 id='email'
                 name='email'
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
+                value={values.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
                 disabled={isLoading}
                 className={`w-full px-3 sm:px-4 py-2.5 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
-                  formik.touched.email && formik.errors.email
+                  touched.email && errors.email
                     ? 'border-red-500 bg-red-900 bg-opacity-20'
                     : ''
                 }`}
                 placeholder='Email here'
               />
-              {formik.touched.email && formik.errors.email && (
-                <p className='mt-1 text-sm text-red-400'>
-                  {formik.errors.email}
-                </p>
+              {touched.email && errors.email && (
+                <p className='mt-1 text-sm text-red-400'>{errors.email}</p>
               )}
             </div>
 
@@ -200,12 +194,12 @@ const SignInPage: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   id='password'
                   name='password'
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+                  value={values.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                   disabled={isLoading}
                   className={`w-full px-3 sm:px-4 py-2.5 pr-10 sm:pr-12 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
-                    formik.touched.password && formik.errors.password
+                    touched.password && errors.password
                       ? 'border-red-500 bg-red-900 bg-opacity-20'
                       : ''
                   }`}
@@ -224,10 +218,8 @@ const SignInPage: React.FC = () => {
                   )}
                 </button>
               </div>
-              {formik.touched.password && formik.errors.password && (
-                <p className='mt-1 text-sm text-red-400'>
-                  {formik.errors.password}
-                </p>
+              {touched.password && errors.password && (
+                <p className='mt-1 text-sm text-red-400'>{errors.password}</p>
               )}
             </div>
 
@@ -244,8 +236,8 @@ const SignInPage: React.FC = () => {
             {/* Sign In Button */}
             <button
               type='button'
-              onClick={formik.handleSubmit}
-              disabled={isLoading}
+              onClick={handleSubmit}
+              disabled={isLoading || status === 'authenticated'}
               className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLoading ? 'Signing in...' : 'Sign-In'}
@@ -278,6 +270,15 @@ const SignInPage: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+}
+
+// Reconstruct full component with suspense boundary preserving prior JSX
+const SignInPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div className='text-white p-8'>Loading...</div>}>
+      <SignInInner />
+    </Suspense>
   );
 };
 
