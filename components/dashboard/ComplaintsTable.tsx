@@ -35,7 +35,7 @@ import ViewComplaint from './ViewComplaint';
 import AssignComplaint from './AssignComplaint';
 
 interface Complaint {
-  id: number;
+  id: string;
   name: string;
   complaint: string;
   propertyAddress: string;
@@ -55,13 +55,25 @@ interface Complaint {
     | 'Pending vendors acceptance';
 }
 
+interface VendorOption {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface ComplaintsTableProps {
   complaints: Complaint[];
+  vendors?: VendorOption[];
   onViewComplaint?: (c: Complaint) => void | Promise<void>;
   onAssignComplaint?: (c: Complaint) => void | Promise<void>;
   onUnassignComplaint?: (c: Complaint) => void | Promise<void>;
   onManageSchedule?: (c: Complaint) => void | Promise<void>;
   onDeleteComplaint?: (c: Complaint) => void | Promise<void>;
+  onAssignVendor?: (payload: {
+    complaint: Complaint;
+    vendor: VendorOption;
+  }) => void;
 }
 
 const getStatusStyles = (status: string) => {
@@ -102,11 +114,13 @@ const getStatusIcon = (status: string) => {
 
 const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
   complaints,
+  vendors,
   onViewComplaint,
   onAssignComplaint,
   onUnassignComplaint,
   onManageSchedule,
   onDeleteComplaint,
+  onAssignVendor,
 }) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null
@@ -129,28 +143,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const filtersActive = statusFilter !== 'All' || !!date;
 
-  // simple placeholder vendor list until wired to API/props
-  const vendors = [
-    {
-      id: '1',
-      name: 'John Williams',
-      email: 'john@williams.com',
-      role: 'Plumber',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@smith.com',
-      role: 'Electrician',
-    },
-    { id: '3', name: 'Alex Chen', email: 'alex@chen.com', role: 'HVAC' },
-    {
-      id: '4',
-      name: 'Maria Garcia',
-      email: 'maria@garcia.com',
-      role: 'Carpenter',
-    },
-  ];
+  const vendorList: VendorOption[] = vendors || [];
 
   const handleViewComplaint = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
@@ -490,10 +483,9 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
         complaint={selectedComplaint}
         open={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
-        vendors={vendors}
+        vendors={vendorList}
         onAssign={({ complaint, vendor }) => {
-          // placeholder hook for now; integrate with backend later
-          console.log('Assign', complaint.id, 'to', vendor);
+          onAssignVendor?.({ complaint, vendor });
         }}
       />
     </>

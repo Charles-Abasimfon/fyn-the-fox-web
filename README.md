@@ -116,3 +116,33 @@ npm run dev
 
 - Ensure `NEXT_PUBLIC_API_BASE_URL` has no trailing slash.
 - Update Next.js to match NextAuth major upgrade (v5+) when released & stable in this codebase.
+
+## Complaints API Integration
+
+The Overview page (`/overview`) now loads real complaints data from the backend endpoint:
+
+```
+GET {NEXT_PUBLIC_API_BASE_URL}/complaints
+Authorization: Bearer <accessToken>
+```
+
+### Data Flow
+
+1. `useSession()` retrieves `session.accessToken` from NextAuth.
+2. `fetchComplaints` in `lib/api/complaints.ts` performs the request (no caching, `no-store`).
+3. Response items are mapped to the UI-friendly `Complaint` shape consumed by `ComplaintsTable`:
+   - `complain` -> `complaint`
+   - Complainant first/last name combined into `name`
+   - Property + Address fields combined into `propertyAddress`
+   - Tenant `apartment_number` -> `units`
+   - Vendor names & `VendorInfo.type` mapped to `assignedTo` & `assignedRole`
+   - `eta` (if present) formatted into `scheduledDate` & `scheduledTime`
+   - Lowercase API `status` normalized (e.g. `assigned`, `pending`, `completed`, `in-progress`, `scheduled`)
+
+### UI States
+
+The page displays loading, error (with retry), or the complaints table. Existing empty-state messaging in the table still applies when the list is empty or filters exclude all items.
+
+### Extending
+
+Add pagination or filtering by extending `fetchComplaints` with additional query params and preserving the mapping logic. For performance, consider server components + `getServerSession` if SSR is desired.

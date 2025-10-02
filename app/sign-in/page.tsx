@@ -14,7 +14,7 @@ function SignInInner() {
   const searchParams = useSearchParams();
   const { status } = useSession();
 
-  // Redirect if already authenticated
+  // Redirect if authenticated (avoid loop during loading or token error states)
   useEffect(() => {
     if (status === 'authenticated') {
       router.replace('/overview');

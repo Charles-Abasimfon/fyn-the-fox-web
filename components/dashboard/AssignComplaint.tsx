@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 
 export interface Complaint {
-  id: number;
+  id: string;
   name: string;
   complaint: string;
   propertyAddress: string;

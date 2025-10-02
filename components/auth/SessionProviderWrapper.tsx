@@ -11,7 +11,10 @@ interface Props {
 function SessionErrorWatcher() {
   const { data: session } = useSession();
   useEffect(() => {
-    if (session?.error === 'RefreshAccessTokenError') {
+    if (
+      session?.error === 'RefreshAccessTokenError' ||
+      session?.error === 'RefreshTokenExpired'
+    ) {
       signOut({ callbackUrl: '/sign-in' });
     }
   }, [session?.error]);

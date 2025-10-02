@@ -13,6 +13,74 @@ interface LoginResponse {
   statusCode?: number;
 }
 
+// Helper to decode a JWT expiry (returns ms epoch) safely
+function decodeJwtExpiry(token: string | undefined): number | null {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+    if (payload?.exp) return payload.exp * 1000; // convert s -> ms
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function refreshAccessToken(params: {
+  accessToken?: string;
+  refreshToken?: string;
+}): Promise<{
+  accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpires?: number;
+  refreshTokenExpires?: number | null;
+  error?: string;
+}> {
+  const { refreshToken } = params;
+  if (!refreshToken) {
+    return { ...params, error: 'NoRefreshToken' };
+  }
+  const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!rawBase) return { ...params, error: 'MissingApiBase' };
+  const baseUrl = rawBase.replace(/\/$/, '');
+  try {
+    const res = await fetch(`${baseUrl}/auth/refresh-token`, {
+      method: 'POST',
+      headers: {
+        // API spec: send refresh-token in Authorization header. Some APIs expect 'Bearer <token>'.
+        // If your API expects bare token, adjust below accordingly.
+        Authorization: `Bearer ${refreshToken}`,
+        'Content-Type': 'application/json',
+      },
+      // body could be empty if API only uses header; keep empty object to be explicit
+      body: JSON.stringify({}),
+      cache: 'no-store',
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok) {
+      return { ...params, error: 'RefreshAccessTokenError' };
+    }
+    const newAccess = json?.data?.access_token as string | undefined;
+    const newRefresh = json?.data?.refresh_token as string | undefined;
+    if (!newAccess || !newRefresh) {
+      return { ...params, error: 'MalformedRefreshResponse' };
+    }
+    const accessTokenExpires =
+      decodeJwtExpiry(newAccess) || Date.now() + 10 * 60 * 1000; // fallback 10m
+    const refreshTokenExpires = decodeJwtExpiry(newRefresh); // may be 15m according to spec
+    return {
+      accessToken: newAccess,
+      refreshToken: newRefresh,
+      accessTokenExpires,
+      refreshTokenExpires,
+    };
+  } catch (e) {
+    console.error('Failed to refresh token', e);
+    return { ...params, error: 'RefreshAccessTokenError' };
+  }
+}
+
 const handler = NextAuth({
   session: { strategy: 'jwt', maxAge: 60 * 60 },
   pages: { signIn: '/sign-in' },
@@ -77,25 +145,60 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Initial sign-in: store tokens & expiries
       if (user) {
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
-        try {
-          const [, payload] = (token.accessToken as string).split('.');
-          const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
-          token.accessTokenExpires = decoded.exp
-            ? decoded.exp * 1000
-            : Date.now() + 3600 * 1000;
-        } catch {
-          token.accessTokenExpires = Date.now() + 3600 * 1000;
-        }
-      }
-      if (
-        token.accessTokenExpires &&
-        Date.now() < (token.accessTokenExpires as number)
-      )
+        token.accessTokenExpires =
+          decodeJwtExpiry(token.accessToken as string) ||
+          Date.now() + 10 * 60 * 1000; // 10m fallback
+        token.refreshTokenExpires =
+          decodeJwtExpiry(token.refreshToken as string) ||
+          Date.now() + 15 * 60 * 1000; // 15m fallback
         return token;
-      return { ...token, error: 'RefreshAccessTokenError' };
+      }
+
+      // If we don't have expiry info, return as-is.
+      if (!token.accessTokenExpires) return token;
+
+      const now = Date.now();
+
+      // Access token still valid
+      if (now < (token.accessTokenExpires as number) - 5 * 1000) {
+        // small safety window
+        return token;
+      }
+
+      // If refresh token appears expired, flag error => sign out
+      if (
+        token.refreshTokenExpires &&
+        now >= (token.refreshTokenExpires as number)
+      ) {
+        return { ...token, error: 'RefreshTokenExpired' };
+      }
+
+      // Attempt refresh
+      const refreshed = await refreshAccessToken({
+        accessToken: token.accessToken as string | undefined,
+        refreshToken: token.refreshToken as string | undefined,
+      });
+
+      if (refreshed.error || !refreshed.accessToken) {
+        return {
+          ...token,
+          error: refreshed.error || 'RefreshAccessTokenError',
+        };
+      }
+
+      return {
+        ...token,
+        accessToken: refreshed.accessToken,
+        refreshToken: refreshed.refreshToken || token.refreshToken,
+        accessTokenExpires: refreshed.accessTokenExpires,
+        refreshTokenExpires:
+          refreshed.refreshTokenExpires || token.refreshTokenExpires,
+        error: undefined,
+      };
     },
     async session({ session, token }) {
       (session as any).accessToken = token.accessToken;

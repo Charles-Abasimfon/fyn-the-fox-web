@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/custom-dialog';
 
 interface Complaint {
-  id: number;
+  id: string;
   name: string;
   complaint: string;
   propertyAddress: string;
