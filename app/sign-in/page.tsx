@@ -1,110 +1,67 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+
+interface FormValues {
+  email: string;
+  password: string;
+}
+
+const validationSchema = Yup.object({
+  email: Yup.string()
+    .trim()
+    .email('Invalid email address')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(6, 'Password must be at least 6 characters')
+    .required('Password is required'),
+});
 
 function SignInInner() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { status } = useSession();
 
-  // Redirect if authenticated (avoid loop during loading or token error states)
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.replace('/overview');
-    }
-  }, [status, router]);
-
-  // Handle next-auth error messages via query param
-  useEffect(() => {
-    const error = searchParams.get('error');
-    if (error) {
-      const map: Record<string, string> = {
-        CredentialsSignin: 'Invalid email or password',
-        AccessDenied: 'Access denied',
-        SessionRequired: 'Please sign in to continue',
-        default: 'Authentication failed',
-      };
-      setLoginError(map[error] || map.default);
-    }
-  }, [searchParams]);
-
-  const [values, setValues] = useState({ email: '', password: '' });
-  const [touched, setTouched] = useState<{
-    email?: boolean;
-    password?: boolean;
-  }>({
-    email: false,
-    password: false,
-  });
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({
-    email: '',
-    password: '',
-  });
-
-  const validate = (vals: typeof values) => {
-    const errs: typeof errors = {};
-    if (!vals.email) errs.email = 'Email is required';
-    else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(vals.email))
-      errs.email = 'Invalid email address';
-    if (!vals.password) errs.password = 'Password is required';
-    else if (vals.password.length < 6)
-      errs.password = 'Password must be at least 6 characters';
-    return errs;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setValues((v) => ({ ...v, [name]: value }));
-    if (touched[name as keyof typeof touched]) {
-      setErrors(validate({ ...values, [name]: value }));
-    }
-  };
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name } = e.target;
-    setTouched((t) => ({ ...t, [name]: true }));
-    setErrors(validate(values));
-  };
-
-  const handleSubmit = async () => {
-    const newTouched = { email: true, password: true };
-    setTouched(newTouched);
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
-
-    setIsLoading(true);
-    setLoginError('');
-    try {
-      const res = await signIn('credentials', {
-        redirect: false,
-        email: values.email,
-        password: values.password,
-        callbackUrl: '/overview',
-      });
-      if (!res) {
-        setLoginError('No response from server');
-      } else if (res.error) {
-        setLoginError(
-          res.error === 'CredentialsSignin'
-            ? 'Invalid email or password'
-            : res.error
-        );
-      } else if (res.ok) {
-        router.push(res.url || '/overview');
+  const formik = useFormik<FormValues>({
+    initialValues: { email: '', password: '' },
+    validationSchema,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: async (vals: FormValues) => {
+      setIsLoading(true);
+      setLoginError('');
+      try {
+        const res = await signIn('credentials', {
+          redirect: false,
+          email: vals.email.trim(),
+          password: vals.password,
+          callbackUrl: '/overview',
+        });
+        if (!res) {
+          setLoginError('No response from server');
+        } else if (res.error) {
+          setLoginError(
+            res.error === 'CredentialsSignin'
+              ? 'Invalid email or password'
+              : res.error
+          );
+        } else if (res.ok) {
+          router.push(res.url || '/overview');
+        }
+      } catch (e: any) {
+        setLoginError(e.message || 'Login failed');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e: any) {
-      setLoginError(e.message || 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
 
   return (
     <div className='min-h-screen relative overflow-hidden bg-[#101014] lg:grid lg:grid-cols-2'>
@@ -146,7 +103,7 @@ function SignInInner() {
           </div>
 
           <div className='space-y-4 w-full'>
-            {/* Login Error Message */}
+            {/* Login error message */}
             {loginError && (
               <div className='p-3 text-sm text-red-400 bg-red-900 bg-opacity-50 border border-red-700 rounded-lg'>
                 {loginError}
@@ -165,19 +122,21 @@ function SignInInner() {
                 type='email'
                 id='email'
                 name='email'
-                value={values.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 disabled={isLoading}
                 className={`w-full px-3 sm:px-4 py-2.5 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
-                  touched.email && errors.email
+                  formik.touched.email && formik.errors.email
                     ? 'border-red-500 bg-red-900 bg-opacity-20'
                     : ''
                 }`}
                 placeholder='Email here'
               />
-              {touched.email && errors.email && (
-                <p className='mt-1 text-sm text-red-400'>{errors.email}</p>
+              {formik.touched.email && formik.errors.email && (
+                <p className='mt-1 text-sm text-red-400'>
+                  {formik.errors.email}
+                </p>
               )}
             </div>
 
@@ -194,12 +153,12 @@ function SignInInner() {
                   type={showPassword ? 'text' : 'password'}
                   id='password'
                   name='password'
-                  value={values.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   disabled={isLoading}
                   className={`w-full px-3 sm:px-4 py-2.5 pr-10 sm:pr-12 text-base rounded-lg bg-[#141414] text-white border border-[#434343] focus:ring-2 focus:ring-primary focus:border-transparent transition-colors disabled:opacity-50 ${
-                    touched.password && errors.password
+                    formik.touched.password && formik.errors.password
                       ? 'border-red-500 bg-red-900 bg-opacity-20'
                       : ''
                   }`}
@@ -218,8 +177,10 @@ function SignInInner() {
                   )}
                 </button>
               </div>
-              {touched.password && errors.password && (
-                <p className='mt-1 text-sm text-red-400'>{errors.password}</p>
+              {formik.touched.password && formik.errors.password && (
+                <p className='mt-1 text-sm text-red-400'>
+                  {formik.errors.password}
+                </p>
               )}
             </div>
 
@@ -236,8 +197,8 @@ function SignInInner() {
             {/* Sign In Button */}
             <button
               type='button'
-              onClick={handleSubmit}
-              disabled={isLoading || status === 'authenticated'}
+              onClick={() => formik.handleSubmit()}
+              disabled={isLoading}
               className='w-full bg-primary text-white py-2.5 sm:py-3 px-4 text-sm rounded-lg font-medium hover:bg-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLoading ? 'Signing in...' : 'Sign-In'}
