@@ -27,6 +27,18 @@ function decodeJwtExpiry(token: string | undefined): number | null {
   return null;
 }
 
+// Helper to decode full JWT payload
+function decodeJwtPayload(token: string | undefined): any {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    return JSON.parse(Buffer.from(parts[1], 'base64').toString());
+  } catch {
+    return null;
+  }
+}
+
 async function refreshAccessToken(params: {
   accessToken?: string;
   refreshToken?: string;
@@ -155,6 +167,17 @@ const handler = NextAuth({
         token.refreshTokenExpires =
           decodeJwtExpiry(token.refreshToken as string) ||
           Date.now() + 15 * 60 * 1000; // 15m fallback
+        
+        // Decode JWT payload to extract user info
+        const payload = decodeJwtPayload(token.accessToken as string);
+        if (payload) {
+          token.userId = payload.id;
+          token.email = payload.email;
+          token.firstName = payload.first_name;
+          token.lastName = payload.last_name;
+          token.role = payload.role;
+        }
+        
         return token;
       }
 
@@ -201,8 +224,22 @@ const handler = NextAuth({
       };
     },
     async session({ session, token }) {
+      // Populate session with access token and user info
       (session as any).accessToken = token.accessToken;
       (session as any).error = token.error;
+      
+      // Populate user object with decoded JWT data
+      if (token.userId) {
+        session.user = {
+          id: token.userId as string,
+          email: token.email as string,
+          name: `${token.firstName || ''} ${token.lastName || ''}`.trim(),
+          firstName: token.firstName as string,
+          lastName: token.lastName as string,
+          role: token.role as string,
+        };
+      }
+      
       return session;
     },
     async redirect({ url, baseUrl }) {
