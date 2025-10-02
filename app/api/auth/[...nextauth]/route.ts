@@ -94,6 +94,25 @@ async function refreshAccessToken(params: {
 }
 
 const handler = NextAuth({
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+      },
+    },
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: { path: '/', sameSite: 'lax' },
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: { path: '/', sameSite: 'lax' },
+    },
+  },
   session: { strategy: 'jwt', maxAge: 60 * 60 },
   pages: { signIn: '/sign-in' },
   providers: [
@@ -157,8 +176,12 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL) {
+        console.warn('[auth][warning] NEXTAUTH_URL not set at runtime');
+      }
       // Initial sign-in: store tokens & expiries
       if (user) {
+        console.log('[auth][jwt] initial sign-in user present');
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
         token.accessTokenExpires =
@@ -167,7 +190,7 @@ const handler = NextAuth({
         token.refreshTokenExpires =
           decodeJwtExpiry(token.refreshToken as string) ||
           Date.now() + 15 * 60 * 1000; // 15m fallback
-        
+
         // Decode JWT payload to extract user info
         const payload = decodeJwtPayload(token.accessToken as string);
         if (payload) {
@@ -177,7 +200,7 @@ const handler = NextAuth({
           token.lastName = payload.last_name;
           token.role = payload.role;
         }
-        
+
         return token;
       }
 
@@ -201,6 +224,7 @@ const handler = NextAuth({
       }
 
       // Attempt refresh
+      console.log('[auth][jwt] access token expired, attempting refresh');
       const refreshed = await refreshAccessToken({
         accessToken: token.accessToken as string | undefined,
         refreshToken: token.refreshToken as string | undefined,
@@ -224,10 +248,11 @@ const handler = NextAuth({
       };
     },
     async session({ session, token }) {
+      console.log('[auth][session] building session for userId:', token.userId);
       // Populate session with access token and user info
       (session as any).accessToken = token.accessToken;
       (session as any).error = token.error;
-      
+
       // Populate user object with decoded JWT data
       if (token.userId) {
         session.user = {
@@ -239,7 +264,7 @@ const handler = NextAuth({
           role: token.role as string,
         };
       }
-      
+
       return session;
     },
     async redirect({ url, baseUrl }) {
