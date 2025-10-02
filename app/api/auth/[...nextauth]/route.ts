@@ -94,25 +94,11 @@ async function refreshAccessToken(params: {
 }
 
 const handler = NextAuth({
-  cookies: {
-    sessionToken: {
-      name: 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-      },
-    },
-    callbackUrl: {
-      name: 'next-auth.callback-url',
-      options: { path: '/', sameSite: 'lax' },
-    },
-    csrfToken: {
-      name: 'next-auth.csrf-token',
-      options: { path: '/', sameSite: 'lax' },
-    },
-  },
+  // debug enabled for temporary investigation; disable when resolved
+  debug: true,
+  // NOTE: Removed custom cookies block so NextAuth can auto-select cookie names.
+  // In production over HTTPS it will likely issue: __Secure-next-auth.session-token
+  // (prefixed) rather than next-auth.session-token. Look for that name in DevTools.
   session: { strategy: 'jwt', maxAge: 60 * 60 },
   pages: { signIn: '/sign-in' },
   providers: [
@@ -176,10 +162,6 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL) {
-        console.warn('[auth][warning] NEXTAUTH_URL not set at runtime');
-      }
-      // Initial sign-in: store tokens & expiries
       if (user) {
         console.log('[auth][jwt] initial sign-in user present');
         token.accessToken = (user as any).accessToken;
