@@ -102,3 +102,42 @@ export async function fetchComplaints(params: {
   if (!json?.data) throw new ApiError('Malformed complaints response');
   return json.data;
 }
+
+export interface AssignVendorPayload {
+  complaint_id: string;
+  vendor_id: string;
+}
+
+export interface AssignVendorResponse {
+  complaint: RawComplaint;
+}
+
+export async function assignVendor(params: {
+  token: string;
+  payload: AssignVendorPayload;
+}): Promise<RawComplaint> {
+  const { token, payload } = params;
+  const base = getBase();
+  const res = await fetch(`${base}/complaints/assign-vendor`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let json: ApiBaseResponse<AssignVendorResponse> | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    /* ignore */
+  }
+  if (!res.ok) {
+    const msg = json?.message || `Failed to assign vendor (${res.status})`;
+    throw new ApiError(msg, res.status);
+  }
+  const updated = json?.data?.complaint;
+  if (!updated) throw new ApiError('Malformed assign vendor response');
+  return updated;
+}

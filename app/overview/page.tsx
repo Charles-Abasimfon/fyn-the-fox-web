@@ -4,13 +4,18 @@ import OverviewCard from '@/components/dashboard/OverviewCard';
 import ComplaintsTable from '@/components/dashboard/ComplaintsTable';
 import VendorsList from '@/components/dashboard/VendorsList';
 import { useSession } from 'next-auth/react';
-import { fetchComplaints, RawComplaint } from '@/lib/api/complaints';
+import {
+  fetchComplaints,
+  RawComplaint,
+  assignVendor,
+} from '@/lib/api/complaints';
 import { fetchVendors, RawVendor } from '@/lib/api/vendors';
 import {
   fetchDashboardStats,
   DashboardStatsResponse,
 } from '@/lib/api/dashboard';
 import { ApiError } from '@/lib/api/auth';
+import { useToast } from '@/components/ui/toast';
 
 // Local interfaces mirroring the expected props of the imported components
 interface Complaint {
@@ -49,6 +54,7 @@ interface AssignVendorOption {
 }
 
 const OverviewPage = () => {
+  const { addToast } = useToast();
   const { data: session } = useSession();
   const accessToken = (session as any)?.accessToken as string | undefined;
 
@@ -102,6 +108,7 @@ const OverviewPage = () => {
       pending: 'Pending',
       scheduled: 'Scheduled',
       'in-progress': 'In Progress',
+      'pending-vendor-acceptance': 'Pending vendors acceptance',
     };
     const uiStatus = statusMap[c.status.toLowerCase()] || 'Pending';
 
@@ -162,7 +169,7 @@ const OverviewPage = () => {
       const status: VendorListItem['status'] =
         v.VendorInfo?.status === 'active' ? 'Active' : 'In-active';
       return {
-        id: index + 1, 
+        id: index + 1,
         name: `${v.first_name} ${v.last_name}`.trim(),
         service: role,
         status,
@@ -291,13 +298,36 @@ const OverviewPage = () => {
               complaints={complaintsData}
               vendors={assignVendors}
               onAssignVendor={({ complaint, vendor }) => {
-                // Placeholder: integrate with assignment endpoint
-                console.log(
-                  'Assign vendor',
-                  vendor.id,
-                  'to complaint',
-                  complaint.id
-                );
+                (async () => {
+                  if (!accessToken) return;
+                  try {
+                    await assignVendor({
+                      token: accessToken,
+                      payload: {
+                        complaint_id: complaint.id,
+                        vendor_id: vendor.id,
+                      },
+                    });
+                    addToast({
+                      variant: 'success',
+                      title: 'Vendor assigned',
+                      description: `${vendor.name} was assigned to the complaint`,
+                    });
+                    // Refresh list and stats to reflect change
+                    loadComplaints();
+                    loadStats();
+                  } catch (e: any) {
+                    const msg =
+                      e instanceof ApiError
+                        ? e.message
+                        : 'Failed to assign vendor';
+                    addToast({
+                      variant: 'error',
+                      title: 'Assignment failed',
+                      description: msg,
+                    });
+                  }
+                })();
               }}
             />
           )}

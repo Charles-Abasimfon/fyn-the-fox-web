@@ -47,6 +47,13 @@ export interface WorkOrder {
     | 'Pending vendors acceptance';
 }
 
+export interface VendorOption {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
   onView?: (wo: WorkOrder) => void | Promise<void>;
@@ -54,6 +61,12 @@ export interface WorkOrdersTableProps {
   onUnassign?: (wo: WorkOrder) => void | Promise<void>;
   onManageSchedule?: (wo: WorkOrder) => void | Promise<void>;
   onDelete?: (wo: WorkOrder) => void | Promise<void>;
+  // New optional props for vendor assignment wiring
+  vendors?: VendorOption[];
+  onAssignVendor?: (payload: {
+    complaint: WorkOrder;
+    vendor: VendorOption;
+  }) => void | Promise<void>;
 }
 
 const getStatusStyles = (status: string) => {
@@ -93,6 +106,8 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   onUnassign,
   onManageSchedule,
   onDelete,
+  vendors = [],
+  onAssignVendor,
 }) => {
   const [statusFilter, setStatusFilter] = useState<
     | 'All'
@@ -115,28 +130,6 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   const [selected, setSelected] = useState<WorkOrder | null>(null);
   const [openView, setOpenView] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
-
-  const vendors = [
-    {
-      id: '1',
-      name: 'John Williams',
-      email: 'john@williams.com',
-      role: 'Plumber',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@smith.com',
-      role: 'Electrician',
-    },
-    { id: '3', name: 'Alex Chen', email: 'alex@chen.com', role: 'HVAC' },
-    {
-      id: '4',
-      name: 'Maria Garcia',
-      email: 'maria@garcia.com',
-      role: 'Carpenter',
-    },
-  ];
 
   const formatDate = (d: Date) =>
     d.toLocaleDateString(undefined, {
@@ -603,7 +596,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
         onOpenChange={setOpenAssign}
         vendors={vendors}
         onAssign={({ complaint, vendor }) => {
-          console.log('Assign', complaint.id, 'to', vendor);
+          if (selected) onAssignVendor?.({ complaint: selected, vendor });
         }}
       />
     </div>

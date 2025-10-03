@@ -9,8 +9,26 @@ import {
   VendorFormValues,
 } from '@/components/dashboard/VendorForm';
 import { useSession } from 'next-auth/react';
-import { fetchVendors, RawVendor } from '@/lib/api/vendors';
+import {
+  fetchVendors,
+  RawVendor,
+  deleteVendor,
+  addVendor,
+  updateVendor,
+} from '@/lib/api/vendors';
 import { ApiError } from '@/lib/api/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 
 function mapVendorToRow(v: RawVendor): VendorRow {
   const roleRaw = v.VendorInfo?.type || 'Service';
@@ -42,6 +60,7 @@ function mapVendorToRow(v: RawVendor): VendorRow {
 }
 
 const VendorsPage = () => {
+  const { addToast } = useToast();
   const { data: session } = useSession();
   const accessToken = (session as any)?.accessToken as string | undefined;
 
@@ -50,6 +69,10 @@ const VendorsPage = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selected, setSelected] = useState<VendorRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<VendorRow | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,44 +100,105 @@ const VendorsPage = () => {
     load();
   }, [load]);
 
-  const handleAdd = (values: VendorFormValues) => {
-    const now = new Date();
-    const formatted = `${now.toLocaleDateString(undefined, {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    })} - ${now.toLocaleTimeString(undefined, {
-      hour: '2-digit',
-      minute: '2-digit',
-    })}`;
-    const row: VendorRow = {
-      id: Math.random().toString(36).slice(2, 9),
-      name: values.name.trim(),
+  const handleAdd = async (values: VendorFormValues) => {
+    if (!accessToken) return;
+    // Map form values to API payload
+    const payload = {
+      first_name: values.first_name.trim(),
+      last_name: values.last_name.trim(),
       email: values.email.trim(),
-      designation: values.designation.trim(),
-      registeredOn: formatted,
-      status: 'Active',
+      password: values.password,
+      phone_number: values.phone_number.trim(),
+      type: values.type.trim().toLowerCase().replace(/\s+/g, '-'),
+      service_area: values.service_area
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      preferred_contact_method: values.preferred_contact_method
+        .trim()
+        .toLowerCase(),
     };
-    setVendors((list) => [row, ...list]);
-    setAddOpen(false);
+    try {
+      const created = await addVendor({ token: accessToken, payload });
+      const row = mapVendorToRow(created);
+      setVendors((list) => [row, ...list]);
+      setAddOpen(false);
+      addToast({
+        variant: 'success',
+        title: 'Vendor added',
+        description: `${row.name} was created successfully`,
+      });
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Failed to add vendor';
+      addToast({ variant: 'error', title: 'Add failed', description: msg });
+    }
   };
 
-  const handleEdit = (values: VendorFormValues) => {
-    if (!selected) return;
+  const handleEdit = async (values: VendorFormValues) => {
+    if (!selected || !accessToken) return;
+    const id = selected.id;
+    // Build update payload conditionally (only include provided fields)
+    const payload: any = {};
+    if (values.first_name.trim()) payload.first_name = values.first_name.trim();
+    if (values.last_name.trim()) payload.last_name = values.last_name.trim();
+    if (values.email.trim()) payload.email = values.email.trim();
+    if (values.phone_number.trim())
+      payload.phone_number = values.phone_number.trim();
+    if (values.type.trim())
+      payload.type = values.type.trim().toLowerCase().replace(/\s+/g, '-');
+    if (values.service_area.trim())
+      payload.service_area = values.service_area
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (values.preferred_contact_method.trim())
+      payload.preferred_contact_method = values.preferred_contact_method
+        .trim()
+        .toLowerCase();
+
+    // Optimistic UI update
+    const newName = `${values.first_name} ${values.last_name}`.trim();
+    const t = values.type.trim();
+    const formattedDesignation = t
+      ? t.charAt(0).toUpperCase() + t.slice(1)
+      : '';
+    const prev = vendors;
     setVendors((list) =>
       list.map((v) =>
-        v.id === selected.id
+        v.id === id
           ? {
               ...v,
-              name: values.name.trim(),
-              email: values.email.trim(),
-              designation: values.designation.trim(),
+              name: newName || v.name,
+              email: values.email.trim() || v.email,
+              designation: formattedDesignation || v.designation,
             }
           : v
       )
     );
-    setEditOpen(false);
-    setViewOpen(false);
+    try {
+      const updated = await updateVendor({
+        token: accessToken,
+        id: String(id),
+        payload,
+      });
+      if (updated) {
+        // Map returned vendor (source of truth)
+        const row = mapVendorToRow(updated);
+        setVendors((list) => list.map((v) => (v.id === id ? row : v)));
+      }
+      setEditOpen(false);
+      setViewOpen(false);
+      addToast({
+        variant: 'success',
+        title: 'Vendor updated',
+        description: 'Changes have been saved.',
+      });
+    } catch (e: any) {
+      // revert on error
+      setVendors(prev);
+      const msg = e instanceof ApiError ? e.message : 'Failed to update vendor';
+      addToast({ variant: 'error', title: 'Update failed', description: msg });
+    }
   };
 
   return (
@@ -149,9 +233,9 @@ const VendorsPage = () => {
             setEditOpen(true);
           }}
           onDeleteVendor={(v) => {
-            // Placeholder: integrate delete endpoint
-            console.log('Delete vendor', v.id);
-            setVendors((list) => list.filter((x) => x.id !== v.id));
+            setDeleteTarget(v);
+            setDeleteError(null);
+            setDeleteOpen(true);
           }}
         />
       )}
@@ -165,8 +249,10 @@ const VendorsPage = () => {
           setEditOpen(true);
         }}
         onDelete={(v) => {
-          console.log('Delete vendor', v.id);
+          setDeleteTarget(v);
+          setDeleteError(null);
           setViewOpen(false);
+          setDeleteOpen(true);
         }}
       />
 
@@ -182,6 +268,86 @@ const VendorsPage = () => {
         onOpenChange={setEditOpen}
         onSubmit={handleEdit}
       />
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(o) => {
+          if (!deleting) setDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent className='bg-[#141414] border-[#434343] text-white'>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+            <AlertDialogDescription className='text-[#BDBDBE]'>
+              {deleteTarget ? (
+                <>
+                  Are you sure you want to delete{' '}
+                  <span className='font-semibold text-white'>
+                    {deleteTarget.name}
+                  </span>
+                  ? This action cannot be undone.
+                </>
+              ) : (
+                'Are you sure you want to delete this vendor?'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && (
+            <div className='text-sm text-red-400 bg-[#2B1D1C] border border-[#5e2c2a] px-3 py-2 rounded-md'>
+              {deleteError}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              className='cursor-pointer text-black'
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className='bg-red-600 hover:bg-red-700 cursor-pointer'
+              onClick={async () => {
+                if (!deleteTarget || !accessToken) return;
+                setDeleting(true);
+                setDeleteError(null);
+                // Optimistic update pattern
+                const id = deleteTarget.id;
+                const prev = vendors;
+                setVendors((list) => list.filter((v) => v.id !== id));
+                try {
+                  await deleteVendor({ token: accessToken, id: String(id) });
+                  setDeleteOpen(false);
+                  setDeleteTarget(null);
+                  addToast({
+                    variant: 'success',
+                    title: 'Vendor deleted',
+                    description: 'The vendor was deleted successfully.',
+                  });
+                } catch (e: any) {
+                  // revert on failure
+                  setVendors(prev);
+                  const msg =
+                    e instanceof ApiError
+                      ? e.message
+                      : 'Failed to delete vendor';
+                  setDeleteError(msg);
+                  addToast({
+                    variant: 'error',
+                    title: 'Delete failed',
+                    description: msg,
+                  });
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

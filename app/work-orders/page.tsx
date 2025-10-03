@@ -2,10 +2,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import WorkOrdersTable, {
   WorkOrder,
+  VendorOption,
 } from '@/components/dashboard/WorkOrdersTable';
 import { useSession } from 'next-auth/react';
-import { fetchComplaints, RawComplaint } from '@/lib/api/complaints';
+import {
+  fetchComplaints,
+  RawComplaint,
+  assignVendor,
+} from '@/lib/api/complaints';
 import { ApiError } from '@/lib/api/auth';
+import { fetchVendors, RawVendor } from '@/lib/api/vendors';
+import { useToast } from '@/components/ui/toast';
 
 // Map RawComplaint (API) -> WorkOrder (UI)
 function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
@@ -43,6 +50,7 @@ function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
     pending: 'Pending',
     scheduled: 'Scheduled',
     'in-progress': 'In Progress',
+    'pending-vendor-acceptance': 'Pending vendors acceptance',
   };
   const status = statusMap[c.status.toLowerCase()] || 'Pending';
 
@@ -61,12 +69,16 @@ function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
 }
 
 const WorkOrdersPage = () => {
+  const { addToast } = useToast();
   const { data: session } = useSession();
   const accessToken = (session as any)?.accessToken as string | undefined;
 
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [vendorsError, setVendorsError] = useState<string | null>(null);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!accessToken) return; // session not ready
@@ -88,12 +100,59 @@ const WorkOrdersPage = () => {
     }
   }, [accessToken]);
 
+  const mapVendor = useCallback((v: RawVendor): VendorOption => {
+    const roleRaw = v.VendorInfo?.type || 'Unknown';
+    const role = roleRaw.charAt(0).toUpperCase() + roleRaw.slice(1);
+    return {
+      id: v.id,
+      name: `${v.first_name} ${v.last_name}`.trim(),
+      email: (v as any).email || 'unknown@example.com',
+      role,
+    };
+  }, []);
+
+  const loadVendors = useCallback(async () => {
+    if (!accessToken) return;
+    setVendorsLoading(true);
+    setVendorsError(null);
+    try {
+      const resp = await fetchVendors({
+        token: accessToken,
+        page: 1,
+        limit: 20,
+      });
+      setVendors(resp.vendors.map(mapVendor));
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Failed to load vendors';
+      setVendorsError(msg);
+    } finally {
+      setVendorsLoading(false);
+    }
+  }, [accessToken, mapVendor]);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadVendors();
+  }, [load, loadVendors]);
 
   return (
     <div className='py-6 pt-8'>
+      {vendorsLoading && (
+        <div className='bg-[#FFFFFF0D] rounded-lg p-4 text-center text-white/70 text-xs mb-3'>
+          Loading vendors...
+        </div>
+      )}
+      {vendorsError && !vendorsLoading && (
+        <div className='bg-[#2B1D1C] border border-[#5e2c2a] rounded-lg p-4 text-red-400 text-xs mb-3 flex items-center justify-between'>
+          <span>{vendorsError}</span>
+          <button
+            onClick={loadVendors}
+            className='px-3 py-1 rounded-md bg-[#F77F00] text-white text-xs font-medium hover:bg-[#f78f20]'
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {loading && (
         <div className='bg-[#FFFFFF0D] rounded-lg p-8 text-center text-white/70 text-sm mb-6'>
           Loading work orders...
@@ -111,7 +170,40 @@ const WorkOrdersPage = () => {
           </button>
         </div>
       )}
-      {!loading && !error && <WorkOrdersTable workOrders={workOrders} />}
+      {!loading && !error && (
+        <WorkOrdersTable
+          workOrders={workOrders}
+          vendors={vendors}
+          onAssignVendor={({ complaint, vendor }) => {
+            (async () => {
+              if (!accessToken) return;
+              try {
+                await assignVendor({
+                  token: accessToken,
+                  payload: {
+                    complaint_id: String(complaint.id),
+                    vendor_id: vendor.id,
+                  },
+                });
+                addToast({
+                  variant: 'success',
+                  title: 'Vendor assigned',
+                  description: `${vendor.name} was assigned to the work order`,
+                });
+                load();
+              } catch (e: any) {
+                const msg =
+                  e instanceof ApiError ? e.message : 'Failed to assign vendor';
+                addToast({
+                  variant: 'error',
+                  title: 'Assignment failed',
+                  description: msg,
+                });
+              }
+            })();
+          }}
+        />
+      )}
     </div>
   );
 };
