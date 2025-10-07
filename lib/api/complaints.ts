@@ -50,7 +50,7 @@ export interface RawComplaint {
       id: string;
       type: string; // plumber etc
       priority: number;
-      availability: string | null;
+      availability: string | Record<string, string> | null;
     };
   } | null;
 }
@@ -139,5 +139,121 @@ export async function assignVendor(params: {
   }
   const updated = json?.data?.complaint;
   if (!updated) throw new ApiError('Malformed assign vendor response');
+  return updated;
+}
+
+export interface UpdateComplaintStatusResponse {
+  complaint: RawComplaint;
+}
+
+export interface UpdateComplaintStatusParams {
+  token: string;
+  id: string;
+  status: string; // e.g., 'in-progress', 'completed', 'estimate-needed'
+}
+
+export async function updateComplaintStatus({
+  token,
+  id,
+  status,
+}: UpdateComplaintStatusParams): Promise<RawComplaint> {
+  const base = getBase();
+  const res = await fetch(`${base}/complaints/${id}/status`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  let json: ApiBaseResponse<UpdateComplaintStatusResponse> | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    /* ignore */
+  }
+  if (!res.ok) {
+    const msg = json?.message || `Failed to update complaint (${res.status})`;
+    throw new ApiError(msg, res.status);
+  }
+  const updated = json?.data?.complaint;
+  if (!updated) throw new ApiError('Malformed update complaint response');
+  return updated;
+}
+
+export interface AcceptWorkOrderResponse {
+  complaint: RawComplaint;
+}
+
+export async function acceptWorkOrder({
+  token,
+  id,
+}: {
+  token: string;
+  id: string;
+}): Promise<RawComplaint> {
+  const base = getBase();
+  const res = await fetch(`${base}/complaints/accept-work-order/${id}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  let json: ApiBaseResponse<AcceptWorkOrderResponse> | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    /* ignore */
+  }
+  if (!res.ok) {
+    const msg = json?.message || `Failed to accept work order (${res.status})`;
+    throw new ApiError(msg, res.status);
+  }
+  const updated = json?.data?.complaint;
+  if (!updated) throw new ApiError('Malformed accept work order response');
+  return updated;
+}
+
+export interface SetSchedulePayload {
+  complaint_id: string;
+  date: string; // ISO date string
+}
+
+export interface SetScheduleResponse {
+  complaint: RawComplaint;
+}
+
+export async function setSchedule({
+  token,
+  payload,
+}: {
+  token: string;
+  payload: SetSchedulePayload;
+}): Promise<RawComplaint> {
+  const base = getBase();
+  const res = await fetch(`${base}/complaints/set-schedule`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let json: ApiBaseResponse<SetScheduleResponse> | null = null;
+  try {
+    json = await res.json();
+  } catch {
+    /* ignore */
+  }
+  if (!res.ok) {
+    const msg = json?.message || `Failed to set schedule (${res.status})`;
+    throw new ApiError(msg, res.status);
+  }
+  const updated = json?.data?.complaint;
+  if (!updated) throw new ApiError('Malformed set schedule response');
   return updated;
 }

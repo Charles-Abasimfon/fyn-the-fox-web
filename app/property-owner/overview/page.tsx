@@ -8,6 +8,7 @@ import {
   fetchComplaints,
   RawComplaint,
   assignVendor,
+  setSchedule,
 } from '@/lib/api/complaints';
 import { fetchVendors, RawVendor } from '@/lib/api/vendors';
 import {
@@ -235,31 +236,31 @@ const OverviewPage = () => {
           </div>
         )}
         <OverviewCard
-          title='Total Complaints'
+          title='Total Work Orders'
           count={stats?.total_complaints ?? 0}
           icon='/icons/complaint.svg'
-          iconAlt='Total complaints icon'
+          iconAlt='Total work orders icon'
           updatedTime={statsLoading ? 'Loading...' : 'Just now'}
-          linkText='View all complaints'
-          linkHref='/complaints'
+          linkText='View all work orders'
+          linkHref='/property-owner/work-orders'
         />
         <OverviewCard
-          title='Open complaints'
+          title='Open work orders'
           count={stats?.open_complaints ?? 0}
           icon='/icons/in-progress.svg'
-          iconAlt='Open complaints icon'
+          iconAlt='Open work orders icon'
           updatedTime={statsLoading ? 'Loading...' : 'Just now'}
-          linkText='View open complaint'
-          linkHref='/complaints/open'
+          linkText='View open work orders'
+          linkHref='/property-owner/work-orders/open'
         />
         <OverviewCard
-          title='Resolved complaints'
+          title='Resolved work orders'
           count={stats?.resolved_complaints ?? 0}
           icon='/icons/completed.svg'
-          iconAlt='Resolved complaints icon'
+          iconAlt='Resolved work orders icon'
           updatedTime={statsLoading ? 'Loading...' : 'Just now'}
-          linkText='View resolved complaint'
-          linkHref='/complaints/resolved'
+          linkText='View resolved work orders'
+          linkHref='/property-owner/work-orders/resolved'
         />
         <OverviewCard
           title='Assigned vendors'
@@ -268,7 +269,7 @@ const OverviewPage = () => {
           iconAlt='Assigned vendors icon'
           updatedTime={statsLoading ? 'Loading...' : 'Just now'}
           linkText='View assigned vendors'
-          linkHref='/vendors'
+          linkHref='/property-owner/vendors'
         />
       </div>
 
@@ -324,6 +325,38 @@ const OverviewPage = () => {
                     addToast({
                       variant: 'error',
                       title: 'Assignment failed',
+                      description: msg,
+                    });
+                  }
+                })();
+              }}
+              onScheduleSet={({ complaint, date }) => {
+                (async () => {
+                  if (!accessToken) return;
+                  try {
+                    await setSchedule({
+                      token: accessToken,
+                      payload: {
+                        complaint_id: complaint.id,
+                        date: date,
+                      },
+                    });
+                    addToast({
+                      variant: 'success',
+                      title: 'Schedule set',
+                      description: 'Work order schedule has been updated',
+                    });
+                    // Refresh list and stats to reflect change
+                    loadComplaints();
+                    loadStats();
+                  } catch (e: any) {
+                    const msg =
+                      e instanceof ApiError
+                        ? e.message
+                        : 'Failed to set schedule';
+                    addToast({
+                      variant: 'error',
+                      title: 'Schedule failed',
                       description: msg,
                     });
                   }

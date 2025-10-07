@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import ViewComplaint from './ViewComplaint';
 import AssignComplaint from './AssignComplaint';
+import ScheduleComplaint from './ScheduleComplaint';
 
 export interface WorkOrder {
   id: number | string;
@@ -67,6 +68,7 @@ export interface WorkOrdersTableProps {
     complaint: WorkOrder;
     vendor: VendorOption;
   }) => void | Promise<void>;
+  onScheduleSet?: (payload: { complaint: WorkOrder; date: string }) => void;
 }
 
 const getStatusStyles = (status: string) => {
@@ -108,6 +110,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   onDelete,
   vendors = [],
   onAssignVendor,
+  onScheduleSet,
 }) => {
   const [statusFilter, setStatusFilter] = useState<
     | 'All'
@@ -130,6 +133,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   const [selected, setSelected] = useState<WorkOrder | null>(null);
   const [openView, setOpenView] = useState(false);
   const [openAssign, setOpenAssign] = useState(false);
+  const [openSchedule, setOpenSchedule] = useState(false);
 
   const formatDate = (d: Date) =>
     d.toLocaleDateString(undefined, {
@@ -219,6 +223,11 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
     setSelected(wo);
     setOpenAssign(true);
     onAssign?.(wo);
+  };
+  const handleSchedule = (wo: WorkOrder) => {
+    setSelected(wo);
+    setOpenSchedule(true);
+    onManageSchedule?.(wo);
   };
 
   return (
@@ -333,7 +342,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
           <thead>
             <tr className='bg-[#F4F4F50A] py-2'>
               <th className='text-left py-4 px-4 text-white text-xs font-semibold whitespace-nowrap'>
-                Name & Complaint
+                Name & Work Order
               </th>
               <th className='text-left py-4 px-4 text-white text-xs font-semibold whitespace-nowrap'>
                 Property Address
@@ -478,6 +487,16 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                             Update Work Order
                           </span>
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        <DropdownMenuItem
+                          onClick={() => handleSchedule(c)}
+                          className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                        >
+                          <img src='/icons/calendar.svg' alt='Schedule' />
+                          <span className='text-sm font-medium'>
+                            Manage Schedule
+                          </span>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -597,6 +616,14 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
         vendors={vendors}
         onAssign={({ complaint, vendor }) => {
           if (selected) onAssignVendor?.({ complaint: selected, vendor });
+        }}
+      />
+      <ScheduleComplaint
+        complaint={selected as any}
+        open={openSchedule}
+        onOpenChange={setOpenSchedule}
+        onSchedule={({ complaint, date }) => {
+          if (selected) onScheduleSet?.({ complaint: selected, date });
         }}
       />
     </div>

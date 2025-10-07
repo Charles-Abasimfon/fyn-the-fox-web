@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 // Protected application sections
-const protectedPrefixes = ['/overview', '/vendors', '/work-orders'];
+const protectedPrefixes = ['/vendor', '/property-owner'];
 const signInPath = '/sign-in';
 
 export async function middleware(req: NextRequest) {
@@ -15,10 +15,11 @@ export async function middleware(req: NextRequest) {
   const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p));
   const isSignIn = pathname === signInPath;
 
-  // If user is authenticated and tries to visit sign-in, send them to dashboard.
+  // If user is authenticated and tries to visit sign-in, send them to their dashboard.
   if (token && isSignIn) {
     const url = req.nextUrl.clone();
-    url.pathname = '/overview';
+    const role = (token as any)?.role || (token as any)?.user?.role;
+    url.pathname = role === 'vendor' ? '/vendor' : '/property-owner/overview';
     return NextResponse.redirect(url);
   }
 
@@ -31,14 +32,33 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Role-based route guard: prevent vendors from accessing owner routes and vice versa
+  const role = (token as any)?.role || (token as any)?.user?.role;
+  if (token) {
+    const isOwnerRoute = ['/property-owner'].some((p) =>
+      pathname.startsWith(p)
+    );
+    const isVendorRoute = pathname.startsWith('/vendor');
+
+    if (role === 'vendor' && isOwnerRoute) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/vendor';
+      return NextResponse.redirect(url);
+    }
+    if (role !== 'vendor' && isVendorRoute) {
+      const url = req.nextUrl.clone();
+      url.pathname = '/property-owner/overview';
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/overview/:path*',
-    '/vendors/:path*',
-    '/work-orders/:path*',
+    '/property-owner/:path*',
+    '/vendor/:path*',
     '/sign-in',
   ],
 };

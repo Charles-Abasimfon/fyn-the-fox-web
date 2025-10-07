@@ -28,7 +28,7 @@ interface NavItem {
   isActive?: boolean;
 }
 
-const TopBar = () => {
+const VendorTopBar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const sessionResult = useSession();
@@ -37,18 +37,13 @@ const TopBar = () => {
   const navItems: NavItem[] = [
     {
       label: 'Overview',
-      href: '/property-owner/overview',
-      isActive: pathname === '/property-owner/overview',
-    },
-    {
-      label: 'Vendors',
-      href: '/property-owner/vendors',
-      isActive: pathname === '/property-owner/vendors',
+      href: '/vendor',
+      isActive: pathname === '/vendor',
     },
     {
       label: 'Work Orders',
-      href: '/property-owner/work-orders',
-      isActive: pathname === '/property-owner/work-orders',
+      href: '/vendor/work-orders',
+      isActive: pathname === '/vendor/work-orders',
     },
   ];
 
@@ -164,7 +159,9 @@ const TopBar = () => {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator className='bg-[#434343]' />
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/sign-in' })}>
+              <DropdownMenuItem
+                onClick={() => signOut({ callbackUrl: '/sign-in' })}
+              >
                 <LogOutIcon className='w-4 h-4 mr-2' />
                 Log out
               </DropdownMenuItem>
@@ -176,4 +173,4 @@ const TopBar = () => {
   );
 };
 
-export default TopBar;
+export default VendorTopBar;

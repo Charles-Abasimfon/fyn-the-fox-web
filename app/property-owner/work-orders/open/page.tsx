@@ -9,6 +9,7 @@ import {
   fetchComplaints,
   RawComplaint,
   assignVendor,
+  setSchedule,
 } from '@/lib/api/complaints';
 import { ApiError } from '@/lib/api/auth';
 import { fetchVendors, RawVendor } from '@/lib/api/vendors';
@@ -68,7 +69,7 @@ function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
   };
 }
 
-const WorkOrdersPage = () => {
+const OpenWorkOrdersPage = () => {
   const { addToast } = useToast();
   const { data: session } = useSession();
   const accessToken = (session as any)?.accessToken as string | undefined;
@@ -90,10 +91,15 @@ const WorkOrdersPage = () => {
         page: 1,
         limit: 20,
       });
-      setWorkOrders(resp.complaints.map(mapComplaintToWorkOrder));
+      // Filter for open complaints (not completed)
+      const openComplaints = resp.complaints.filter((c) => {
+        const status = c.status.toLowerCase();
+        return status !== 'completed';
+      });
+      setWorkOrders(openComplaints.map(mapComplaintToWorkOrder));
     } catch (e: any) {
       const msg =
-        e instanceof ApiError ? e.message : 'Failed to load work orders';
+        e instanceof ApiError ? e.message : 'Failed to load open work orders';
       setError(msg);
     } finally {
       setLoading(false);
@@ -137,6 +143,12 @@ const WorkOrdersPage = () => {
 
   return (
     <div className='py-6 pt-8'>
+      <div className='mb-6'>
+        <h1 className='text-2xl font-semibold text-white'>Open Complaints</h1>
+        <p className='text-sm text-white/60 mt-1'>
+          View and manage all open work orders
+        </p>
+      </div>
       {vendorsLoading && (
         <div className='bg-[#FFFFFF0D] rounded-lg p-4 text-center text-white/70 text-xs mb-3'>
           Loading vendors...
@@ -155,12 +167,12 @@ const WorkOrdersPage = () => {
       )}
       {loading && (
         <div className='bg-[#FFFFFF0D] rounded-lg p-8 text-center text-white/70 text-sm mb-6'>
-          Loading work orders...
+          Loading open work orders...
         </div>
       )}
       {error && !loading && (
         <div className='bg-[#2B1D1C] border border-[#5e2c2a] rounded-lg p-6 text-red-400 text-sm space-y-4 mb-6'>
-          <div className='font-semibold'>Failed to load work orders</div>
+          <div className='font-semibold'>Failed to load open work orders</div>
           <div className='text-red-300'>{error}</div>
           <button
             onClick={load}
@@ -171,41 +183,81 @@ const WorkOrdersPage = () => {
         </div>
       )}
       {!loading && !error && (
-        <WorkOrdersTable
-          workOrders={workOrders}
-          vendors={vendors}
-          onAssignVendor={({ complaint, vendor }) => {
-            (async () => {
-              if (!accessToken) return;
-              try {
-                await assignVendor({
-                  token: accessToken,
-                  payload: {
-                    complaint_id: String(complaint.id),
-                    vendor_id: vendor.id,
-                  },
-                });
-                addToast({
-                  variant: 'success',
-                  title: 'Vendor assigned',
-                  description: `${vendor.name} was assigned to the work order`,
-                });
-                load();
-              } catch (e: any) {
-                const msg =
-                  e instanceof ApiError ? e.message : 'Failed to assign vendor';
-                addToast({
-                  variant: 'error',
-                  title: 'Assignment failed',
-                  description: msg,
-                });
-              }
-            })();
-          }}
-        />
+        <>
+          {workOrders.length === 0 ? (
+            <div className='bg-[#FFFFFF0D] rounded-lg p-8 text-center text-white/70 text-sm'>
+              No open work orders found
+            </div>
+          ) : (
+            <WorkOrdersTable
+              workOrders={workOrders}
+              vendors={vendors}
+              onAssignVendor={({ complaint, vendor }) => {
+                (async () => {
+                  if (!accessToken) return;
+                  try {
+                    await assignVendor({
+                      token: accessToken,
+                      payload: {
+                        complaint_id: String(complaint.id),
+                        vendor_id: vendor.id,
+                      },
+                    });
+                    addToast({
+                      variant: 'success',
+                      title: 'Vendor assigned',
+                      description: `${vendor.name} was assigned to the work order`,
+                    });
+                    load();
+                  } catch (e: any) {
+                    const msg =
+                      e instanceof ApiError
+                        ? e.message
+                        : 'Failed to assign vendor';
+                    addToast({
+                      variant: 'error',
+                      title: 'Assignment failed',
+                      description: msg,
+                    });
+                  }
+                })();
+              }}
+              onScheduleSet={({ complaint, date }) => {
+                (async () => {
+                  if (!accessToken) return;
+                  try {
+                    await setSchedule({
+                      token: accessToken,
+                      payload: {
+                        complaint_id: String(complaint.id),
+                        date: date,
+                      },
+                    });
+                    addToast({
+                      variant: 'success',
+                      title: 'Schedule set',
+                      description: 'Work order schedule has been updated',
+                    });
+                    load();
+                  } catch (e: any) {
+                    const msg =
+                      e instanceof ApiError
+                        ? e.message
+                        : 'Failed to set schedule';
+                    addToast({
+                      variant: 'error',
+                      title: 'Schedule failed',
+                      description: msg,
+                    });
+                  }
+                })();
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
 };
 
-export default WorkOrdersPage;
+export default OpenWorkOrdersPage;

@@ -6,7 +6,7 @@ import * as Yup from 'yup';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 
 interface FormValues {
   email: string;
@@ -29,6 +29,20 @@ function SignInInner() {
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
 
+  // Normalize technical errors to user-friendly messages
+  const toFriendlyError = (err?: string) => {
+    const msg = (err || '').toLowerCase();
+    if (
+      msg.includes('fetch failed') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('network')
+    ) {
+      return 'Something went wrong, try again';
+    }
+    if (err === 'CredentialsSignin') return 'Invalid email or password';
+    return err || 'Something went wrong, try again';
+  };
+
   const formik = useFormik<FormValues>({
     initialValues: { email: '', password: '' },
     validationSchema,
@@ -42,21 +56,24 @@ function SignInInner() {
           redirect: false,
           email: vals.email.trim(),
           password: vals.password,
-          callbackUrl: '/overview',
+          callbackUrl: '/',
         });
         if (!res) {
           setLoginError('No response from server');
         } else if (res.error) {
-          setLoginError(
-            res.error === 'CredentialsSignin'
-              ? 'Invalid email or password'
-              : res.error
-          );
+          setLoginError(toFriendlyError(res.error));
         } else if (res.ok) {
-          router.push(res.url || '/overview');
+          // Retrieve session to read role then redirect accordingly
+          const sess = await getSession();
+          const role = (sess as any)?.user?.role as string | undefined;
+          if (role && role.toLowerCase() === 'vendor') {
+            router.push('/vendor');
+          } else {
+            router.push('/property-owner/overview');
+          }
         }
       } catch (e: any) {
-        setLoginError(e.message || 'Login failed');
+        setLoginError(toFriendlyError(e?.message));
       } finally {
         setIsLoading(false);
       }

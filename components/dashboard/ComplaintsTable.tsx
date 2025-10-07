@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import ViewComplaint from './ViewComplaint';
 import AssignComplaint from './AssignComplaint';
+import ScheduleComplaint from './ScheduleComplaint';
 
 interface Complaint {
   id: string;
@@ -74,6 +75,7 @@ interface ComplaintsTableProps {
     complaint: Complaint;
     vendor: VendorOption;
   }) => void;
+  onScheduleSet?: (payload: { complaint: Complaint; date: string }) => void;
 }
 
 const getStatusStyles = (status: string) => {
@@ -121,12 +123,14 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
   onManageSchedule,
   onDeleteComplaint,
   onAssignVendor,
+  onScheduleSet,
 }) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null
   );
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
 
   // Filters state
   const [statusFilter, setStatusFilter] = useState<
@@ -155,6 +159,12 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
     setSelectedComplaint(complaint);
     setIsAssignDialogOpen(true);
     onAssignComplaint?.(complaint);
+  };
+
+  const handleManageSchedule = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setIsScheduleDialogOpen(true);
+    onManageSchedule?.(complaint);
   };
 
   const formatDate = (d: Date) =>
@@ -280,7 +290,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
             <thead>
               <tr className='bg-[#F4F4F50A] py-2'>
                 <th className='text-left py-4 px-4 text-white text-xs font-semibold whitespace-nowrap'>
-                  Name & Complaint
+                  Name & Work Order
                 </th>
                 <th className='text-left py-4 px-4 text-white text-xs font-semibold whitespace-nowrap'>
                   Property Address
@@ -431,7 +441,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                             </span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className='bg-[#434343]' />
-                          <DropdownMenuItem
+                          {/* <DropdownMenuItem
                             onClick={() => onUnassignComplaint?.(complaint)}
                             className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
                           >
@@ -440,9 +450,9 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                               Unassign Complaint
                             </span>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className='bg-[#434343]' />
+                          <DropdownMenuSeparator className='bg-[#434343]' /> */}
                           <DropdownMenuItem
-                            onClick={() => onManageSchedule?.(complaint)}
+                            onClick={() => handleManageSchedule(complaint)}
                             className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
                           >
                             <img
@@ -453,14 +463,14 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                               Manage Schedule Date
                             </span>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className='bg-[#434343]' />
+                          {/* <DropdownMenuSeparator className='bg-[#434343]' />
                           <DropdownMenuItem
                             onClick={() => onDeleteComplaint?.(complaint)}
                             className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
                           >
                             <img src='/icons/delete.svg' alt='Delete' />
                             <span className='text-sm font-medium'>Delete</span>
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -486,6 +496,14 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
         vendors={vendorList}
         onAssign={({ complaint, vendor }) => {
           onAssignVendor?.({ complaint, vendor });
+        }}
+      />
+      <ScheduleComplaint
+        complaint={selectedComplaint}
+        open={isScheduleDialogOpen}
+        onOpenChange={setIsScheduleDialogOpen}
+        onSchedule={({ complaint, date }) => {
+          onScheduleSet?.({ complaint, date });
         }}
       />
     </>
