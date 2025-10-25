@@ -1,4 +1,5 @@
 import { ApiBaseResponse, ApiError } from './auth';
+import { getRuntimeApiBase } from './config';
 
 export interface RawVendorInfoAvailability {
   [day: string]: string;
@@ -34,9 +35,11 @@ export interface VendorsListResponse {
 }
 
 function getBase(): string {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || '';
-  if (!base) throw new ApiError('API base URL not configured');
-  return base;
+  try {
+    return getRuntimeApiBase();
+  } catch (e: any) {
+    throw new ApiError(e?.message || 'API base URL not configured');
+  }
 }
 
 export async function fetchVendors(params: {

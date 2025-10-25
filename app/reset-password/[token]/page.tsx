@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { Suspense, useState, use } from 'react';
 import { resetPassword } from '@/lib/api/auth';
 import Link from 'next/link';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
@@ -64,7 +64,7 @@ const passwordRules = [
   },
 ];
 
-const ResetPasswordPage = ({
+const ResetPasswordContent = ({
   params,
 }: {
   params: Promise<{ token: string }>;
@@ -356,4 +356,12 @@ const ResetPasswordPage = ({
   );
 };
 
-export default ResetPasswordPage;
+export default function ResetPasswordPage(props: {
+  params: Promise<{ token: string }>;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent {...props} />
+    </Suspense>
+  );
+}

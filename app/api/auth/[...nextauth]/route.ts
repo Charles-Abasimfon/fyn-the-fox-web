@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import { AppMode } from '@/lib/api/config';
 
 // Expected API login response shape
 interface LoginResponse {
@@ -42,6 +43,7 @@ function decodeJwtPayload(token: string | undefined): any {
 async function refreshAccessToken(params: {
   accessToken?: string;
   refreshToken?: string;
+  mode?: AppMode;
 }): Promise<{
   accessToken?: string;
   refreshToken?: string;
@@ -49,11 +51,15 @@ async function refreshAccessToken(params: {
   refreshTokenExpires?: number | null;
   error?: string;
 }> {
-  const { refreshToken } = params;
+  const { refreshToken, mode } = params;
   if (!refreshToken) {
     return { ...params, error: 'NoRefreshToken' };
   }
-  const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const rawBase =
+    mode === 'hospitality'
+      ? process.env.NEXT_PUBLIC_API_BASE_URL_HOSPITALITY
+      : process.env.NEXT_PUBLIC_API_BASE_URL_PROPERTY ||
+        process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!rawBase) return { ...params, error: 'MissingApiBase' };
   const baseUrl = rawBase.replace(/\/$/, '');
   try {
@@ -112,10 +118,15 @@ const handler = NextAuth({
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
-
-        const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+        const mode = (credentials as any)?.mode as AppMode | undefined;
+        const rawBase =
+          mode === 'hospitality'
+            ? process.env.NEXT_PUBLIC_API_BASE_URL_HOSPITALITY ||
+              'http://hospitality.genriseyouthcenter.com/api'
+            : process.env.NEXT_PUBLIC_API_BASE_URL_PROPERTY ||
+              process.env.NEXT_PUBLIC_API_BASE_URL;
         if (!rawBase) {
-          throw new Error('NEXT_PUBLIC_API_BASE_URL env var not set');
+          throw new Error('API base URL env vars not set for selected mode');
         }
         const baseUrl = rawBase.replace(/\/$/, '');
         try {
@@ -152,6 +163,7 @@ const handler = NextAuth({
             id: json.data.access_token,
             accessToken: json.data.access_token,
             refreshToken: json.data.refresh_token,
+            mode: mode || 'property',
           } as any;
         } catch (e: any) {
           console.error('Authorize error', e);
@@ -166,6 +178,7 @@ const handler = NextAuth({
         console.log('[auth][jwt] initial sign-in user present');
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
+        token.mode = (user as any).mode || 'property';
         token.accessTokenExpires =
           decodeJwtExpiry(token.accessToken as string) ||
           Date.now() + 10 * 60 * 1000; // 10m fallback
@@ -210,6 +223,7 @@ const handler = NextAuth({
       const refreshed = await refreshAccessToken({
         accessToken: token.accessToken as string | undefined,
         refreshToken: token.refreshToken as string | undefined,
+        mode: (token as any).mode as AppMode | undefined,
       });
 
       if (refreshed.error || !refreshed.accessToken) {
@@ -234,6 +248,7 @@ const handler = NextAuth({
       // Populate session with access token and user info
       (session as any).accessToken = token.accessToken;
       (session as any).error = token.error;
+      (session as any).mode = (token as any).mode || 'property';
 
       // Populate user object with decoded JWT data
       if (token.userId) {

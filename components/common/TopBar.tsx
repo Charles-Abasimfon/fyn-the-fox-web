@@ -21,6 +21,7 @@ import {
   ChevronRightIcon,
   MenuIcon,
 } from 'lucide-react';
+import { useMode } from '@/components/auth/ModeProvider';
 
 interface NavItem {
   label: string;
@@ -33,24 +34,49 @@ const TopBar = () => {
   const pathname = usePathname();
   const sessionResult = useSession();
   const session = sessionResult?.data;
+  const { mode, setMode } = useMode();
 
-  const navItems: NavItem[] = [
-    {
-      label: 'Overview',
-      href: '/property-owner/overview',
-      isActive: pathname === '/property-owner/overview',
-    },
-    {
-      label: 'Vendors',
-      href: '/property-owner/vendors',
-      isActive: pathname === '/property-owner/vendors',
-    },
-    {
-      label: 'Work Orders',
-      href: '/property-owner/work-orders',
-      isActive: pathname === '/property-owner/work-orders',
-    },
-  ];
+  const isHosp = pathname.startsWith('/hospitality');
+  const navItems: NavItem[] = isHosp
+    ? [
+        {
+          label: 'Overview',
+          href: '/hospitality/overview',
+          isActive: pathname === '/hospitality/overview',
+        },
+        {
+          label: 'Reservations',
+          href: '/hospitality/reservations',
+          isActive: pathname === '/hospitality/reservations',
+        },
+        {
+          label: 'Events',
+          href: '/hospitality/events',
+          isActive: pathname === '/hospitality/events',
+        },
+        {
+          label: 'Upsells',
+          href: '/hospitality/upsells',
+          isActive: pathname === '/hospitality/upsells',
+        },
+      ]
+    : [
+        {
+          label: 'Overview',
+          href: '/property-owner/overview',
+          isActive: pathname === '/property-owner/overview',
+        },
+        {
+          label: 'Vendors',
+          href: '/property-owner/vendors',
+          isActive: pathname === '/property-owner/vendors',
+        },
+        {
+          label: 'Work Orders',
+          href: '/property-owner/work-orders',
+          isActive: pathname === '/property-owner/work-orders',
+        },
+      ];
 
   const handleNavigation = (href: string) => {
     router.push(href);
@@ -92,6 +118,38 @@ const TopBar = () => {
             </button>
           ))}
         </div>
+
+        {/* Mode Toggle */}
+        {/* <div className='hidden md:flex items-center gap-2 mr-2'>
+          <div className='flex rounded-md border border-white/20 overflow-hidden'>
+            <button
+              type='button'
+              onClick={() => {
+                setMode('property');
+                router.push('/property-owner/overview?view=property');
+              }}
+              className={`px-3 py-1 text-sm ${
+                mode === 'property' ? 'bg-primary text-white' : 'text-white/80'
+              }`}
+            >
+              Property
+            </button>
+            <button
+              type='button'
+              onClick={() => {
+                setMode('hospitality');
+                router.push('/hospitality/overview?view=hospitality');
+              }}
+              className={`px-3 py-1 text-sm ${
+                mode === 'hospitality'
+                  ? 'bg-primary text-white'
+                  : 'text-white/80'
+              }`}
+            >
+              Hospitality
+            </button>
+          </div>
+        </div> */}
 
         {/* User Profile Dropdown */}
         <div className='flex items-center gap-2'>
@@ -164,7 +222,9 @@ const TopBar = () => {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator className='bg-[#434343]' />
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/sign-in' })}>
+              <DropdownMenuItem
+                onClick={() => signOut({ callbackUrl: '/sign-in' })}
+              >
                 <LogOutIcon className='w-4 h-4 mr-2' />
                 Log out
               </DropdownMenuItem>

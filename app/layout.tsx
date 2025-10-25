@@ -3,6 +3,7 @@ import { Figtree, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import SessionProviderWrapper from '@/components/auth/SessionProviderWrapper';
 import { ToastProvider } from '@/components/ui/toast';
+import { ModeProvider } from '@/components/auth/ModeProvider';
 
 const figtree = Figtree({
   subsets: ['latin'],
@@ -41,7 +42,9 @@ export default function RootLayout({
         className={`${figtree.variable} ${plusJakartaSans.variable} bg-[#101014]`}
       >
         <SessionProviderWrapper>
-          <ToastProvider>{children}</ToastProvider>
+          <ModeProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ModeProvider>
         </SessionProviderWrapper>
       </body>
     </html>

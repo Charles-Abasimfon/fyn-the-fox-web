@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { forgotPassword } from '@/lib/api/auth';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 // Formik-like validation hook
 const useFormik = (config: any) => {
@@ -55,11 +56,55 @@ const useFormik = (config: any) => {
   };
 };
 
-const ForgotPasswordPage: React.FC = () => {
+// Inner component that uses navigation hooks; must be wrapped in <Suspense>
+const ForgotPasswordContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [resetError, setResetError] = useState('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  type ViewMode = 'property' | 'hospitality';
+  const [view, setView] = useState<ViewMode>('property');
+
+  // Initialize view from URL or localStorage, and ensure URL contains it
+  useEffect(() => {
+    try {
+      const qp = (searchParams.get('view') || '').toLowerCase();
+      const stored =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem('fyn_view') || '').toLowerCase()
+          : '';
+      let initial: ViewMode = 'property';
+      if (qp === 'hospitality' || qp === 'property') initial = qp as ViewMode;
+      else if (stored === 'hospitality' || stored === 'property')
+        initial = stored as ViewMode;
+      setView(initial);
+
+      // If URL missing, sync it silently
+      if (!qp) {
+        const sp = new URLSearchParams(searchParams.toString());
+        sp.set('view', initial);
+        router.replace(`${pathname}?${sp.toString()}`);
+      }
+    } catch {
+      // no-op
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateView = (next: ViewMode) => {
+    setView(next);
+    try {
+      if (typeof window !== 'undefined') localStorage.setItem('fyn_view', next);
+    } catch {
+      // ignore storage errors
+    }
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.set('view', next);
+    router.replace(`${pathname}?${sp.toString()}`);
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -260,6 +305,41 @@ const ForgotPasswordPage: React.FC = () => {
           </div>
 
           <div className='space-y-4 sm:space-y-6 w-full'>
+            {/* View Toggle */}
+            <div className='flex w-full items-center justify-center sm:justify-start'>
+              <div
+                className='w-full grid grid-cols-2 gap-1 rounded-lg border border-[#434343] bg-[#0f0f10] p-1'
+                role='tablist'
+                aria-label='Select vertical'
+              >
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={view === 'property'}
+                  onClick={() => updateView('property')}
+                  className={`w-full px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                    view === 'property'
+                      ? 'bg-primary text-white shadow'
+                      : 'text-[#B7B7B8] hover:text-white'
+                  }`}
+                >
+                  Property
+                </button>
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={view === 'hospitality'}
+                  onClick={() => updateView('hospitality')}
+                  className={`w-full px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                    view === 'hospitality'
+                      ? 'bg-primary text-white shadow'
+                      : 'text-[#B7B7B8] hover:text-white'
+                  }`}
+                >
+                  Hospitality
+                </button>
+              </div>
+            </div>
             {/* Reset Error Message */}
             {resetError && (
               <div className='p-3 text-sm text-red-400 bg-red-900 bg-opacity-50 border border-red-700 rounded-lg'>
@@ -345,4 +425,11 @@ const ForgotPasswordPage: React.FC = () => {
   );
 };
 
-export default ForgotPasswordPage;
+// Page component provides the required Suspense boundary for useSearchParams
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordContent />
+    </Suspense>
+  );
+}

@@ -14,17 +14,14 @@ class ApiError extends Error {
     this.status = status;
   }
 }
+import { getRuntimeApiBase } from './config';
 
 const getBaseUrl = (): string => {
-  const raw = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-  const cleaned = raw.replace(/\/$/, '');
-  if (!cleaned) throw new ApiError('API base URL not configured');
   try {
-    new URL(cleaned);
-  } catch {
-    throw new ApiError('Invalid API base URL');
+    return getRuntimeApiBase();
+  } catch (e: any) {
+    throw new ApiError(e?.message || 'API base URL not configured');
   }
-  return cleaned;
 };
 
 async function handleJson<T>(res: Response): Promise<ApiBaseResponse<T>> {

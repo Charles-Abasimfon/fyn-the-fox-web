@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 // Protected application sections
-const protectedPrefixes = ['/vendor', '/property-owner'];
+const protectedPrefixes = ['/vendor', '/property-owner', '/hospitality'];
 const signInPath = '/sign-in';
 
 export async function middleware(req: NextRequest) {
@@ -19,7 +19,15 @@ export async function middleware(req: NextRequest) {
   if (token && isSignIn) {
     const url = req.nextUrl.clone();
     const role = (token as any)?.role || (token as any)?.user?.role;
-    url.pathname = role === 'vendor' ? '/vendor' : '/property-owner/overview';
+    // Prefer hospitality if user was navigating there
+    const original = req.nextUrl.searchParams.get('callbackUrl') || '';
+    const wantsHosp = original.startsWith('/hospitality');
+    url.pathname =
+      role === 'vendor'
+        ? '/vendor'
+        : wantsHosp
+        ? '/hospitality/overview'
+        : '/property-owner/overview';
     return NextResponse.redirect(url);
   }
 
@@ -39,6 +47,7 @@ export async function middleware(req: NextRequest) {
       pathname.startsWith(p)
     );
     const isVendorRoute = pathname.startsWith('/vendor');
+    const isHospitalityRoute = pathname.startsWith('/hospitality');
 
     if (role === 'vendor' && isOwnerRoute) {
       const url = req.nextUrl.clone();
@@ -50,6 +59,7 @@ export async function middleware(req: NextRequest) {
       url.pathname = '/property-owner/overview';
       return NextResponse.redirect(url);
     }
+    // Owners can access both property-owner and hospitality sections; adjust if roles specialize later
   }
 
   return NextResponse.next();
@@ -59,6 +69,7 @@ export const config = {
   matcher: [
     '/property-owner/:path*',
     '/vendor/:path*',
+    '/hospitality/:path*',
     '/sign-in',
   ],
 };

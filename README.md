@@ -46,6 +46,39 @@ This project now uses NextAuth (Credentials Provider) to authenticate against th
 Create a `.env.local` file at the project root with:
 
 ```
+## Mode switching: Property vs Hospitality
+
+The app now supports two operational modes with separate API backends:
+
+- Property management (existing dashboards under `/property-owner` and `/vendor`)
+- Hospitality (new section under `/hospitality`)
+
+### How it works
+
+- A global ModeProvider keeps track of the current mode (`property` or `hospitality`).
+- The selected mode is persisted to `localStorage` using the key `fyn_view` and mirrored into the `?view=` URL query param for clarity.
+- All API helpers read the base URL dynamically via `lib/api/config.ts`, selecting the correct base URL per mode at runtime.
+
+### Configure API base URLs
+
+Set the following environment variables for the two backends:
+
+- `NEXT_PUBLIC_API_BASE_URL_PROPERTY` → Property management API base URL (fallbacks to legacy `NEXT_PUBLIC_API_BASE_URL`)
+- `NEXT_PUBLIC_API_BASE_URL_HOSPITALITY` → Hospitality API base URL
+
+Both should be full URLs without a trailing slash, e.g. `https://api.example.com`
+
+### Switching modes
+
+- From the sign-in page, use the Property/Hospitality toggle before logging in.
+- In the app’s TopBar, use the Property/Hospitality toggle to switch context; this updates the URL `?view` and subsequent API calls use the selected backend.
+- Direct navigation also implies mode: any path under `/hospitality` activates hospitality mode, while `/property-owner` and `/vendor` imply property mode.
+
+### Auth and redirects
+
+- After sign-in, vendors are routed to `/vendor` as before.
+- Non-vendor users are routed to `/hospitality/overview` when `view=hospitality` is selected, otherwise to `/property-owner/overview`.
+- Middleware protects `/hospitality/*` in addition to existing protected routes.
 NEXTAUTH_SECRET=your-random-secret-value
 NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=https://fynthefox.com.genriseyouthcenter.com/api

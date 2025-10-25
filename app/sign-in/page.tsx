@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { signIn, getSession } from 'next-auth/react';
 
 interface FormValues {
@@ -28,6 +28,49 @@ function SignInInner() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  type ViewMode = 'property' | 'hospitality';
+  const [view, setView] = useState<ViewMode>('property');
+
+  // Initialize view from URL or localStorage, and ensure URL contains it
+  useEffect(() => {
+    try {
+      const qp = (searchParams.get('view') || '').toLowerCase();
+      const stored =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem('fyn_view') || '').toLowerCase()
+          : '';
+      let initial: ViewMode = 'property';
+      if (qp === 'hospitality' || qp === 'property') initial = qp as ViewMode;
+      else if (stored === 'hospitality' || stored === 'property')
+        initial = stored as ViewMode;
+      setView(initial);
+
+      // If URL missing, sync it silently
+      if (!qp) {
+        const sp = new URLSearchParams(searchParams.toString());
+        sp.set('view', initial);
+        router.replace(`${pathname}?${sp.toString()}`);
+      }
+    } catch {
+      // no-op
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateView = (next: ViewMode) => {
+    setView(next);
+    try {
+      if (typeof window !== 'undefined') localStorage.setItem('fyn_view', next);
+    } catch {
+      // ignore storage errors
+    }
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.set('view', next);
+    router.replace(`${pathname}?${sp.toString()}`);
+  };
 
   // Normalize technical errors to user-friendly messages
   const toFriendlyError = (err?: string) => {
@@ -56,6 +99,7 @@ function SignInInner() {
           redirect: false,
           email: vals.email.trim(),
           password: vals.password,
+          mode: view,
           callbackUrl: '/',
         });
         if (!res) {
@@ -66,10 +110,13 @@ function SignInInner() {
           // Retrieve session to read role then redirect accordingly
           const sess = await getSession();
           const role = (sess as any)?.user?.role as string | undefined;
+          const query = `?view=${view}`;
           if (role && role.toLowerCase() === 'vendor') {
-            router.push('/vendor');
+            router.push(`/vendor${query}`);
+          } else if (view === 'hospitality') {
+            router.push(`/hospitality/overview${query}`);
           } else {
-            router.push('/property-owner/overview');
+            router.push(`/property-owner/overview${query}`);
           }
         }
       } catch (e: any) {
@@ -120,6 +167,42 @@ function SignInInner() {
           </div>
 
           <div className='space-y-4 w-full'>
+            {/* View Toggle */}
+            <div className='flex w-full items-center justify-center sm:justify-start'>
+              <div
+                className='w-full grid grid-cols-2 gap-1 rounded-lg border border-[#434343] bg-[#0f0f10] p-1'
+                role='tablist'
+                aria-label='Select vertical'
+              >
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={view === 'property'}
+                  onClick={() => updateView('property')}
+                  className={`w-full px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                    view === 'property'
+                      ? 'bg-primary text-white shadow'
+                      : 'text-[#B7B7B8] hover:text-white'
+                  }`}
+                >
+                  Property
+                </button>
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={view === 'hospitality'}
+                  onClick={() => updateView('hospitality')}
+                  className={`w-full px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                    view === 'hospitality'
+                      ? 'bg-primary text-white shadow'
+                      : 'text-[#B7B7B8] hover:text-white'
+                  }`}
+                >
+                  Hospitality
+                </button>
+              </div>
+            </div>
+
             {/* Login error message */}
             {loginError && (
               <div className='p-3 text-sm text-red-400 bg-red-900 bg-opacity-50 border border-red-700 rounded-lg'>
