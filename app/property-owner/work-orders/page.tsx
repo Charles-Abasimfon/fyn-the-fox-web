@@ -14,6 +14,7 @@ import {
 import { ApiError } from '@/lib/api/auth';
 import { fetchVendors, RawVendor } from '@/lib/api/vendors';
 import { useToast } from '@/components/ui/toast';
+import { useRouter } from 'next/navigation';
 
 // Map RawComplaint (API) -> WorkOrder (UI)
 function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
@@ -71,6 +72,7 @@ function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
 
 const WorkOrdersPage = () => {
   const { addToast } = useToast();
+  const router = useRouter();
   const { data: session } = useSession();
   const accessToken = (session as any)?.accessToken as string | undefined;
 
@@ -138,6 +140,14 @@ const WorkOrdersPage = () => {
 
   return (
     <div className='py-6 pt-8'>
+      <div className='flex items-center justify-end mb-3'>
+        <button
+          onClick={() => router.push('/property-owner/work-orders/add')}
+          className='px-4 py-2 rounded-md bg-[#F77F00] text-white text-sm font-medium hover:bg-[#f78f20]'
+        >
+          Add Work Order
+        </button>
+      </div>
       {vendorsLoading && (
         <div className='bg-[#FFFFFF0D] rounded-lg p-4 text-center text-white/70 text-xs mb-3'>
           Loading vendors...
@@ -231,6 +241,9 @@ const WorkOrdersPage = () => {
               }
             })();
           }}
+          onEdit={(wo) =>
+            router.push(`/property-owner/work-orders/${wo.id}/edit`)
+          }
         />
       )}
     </div>

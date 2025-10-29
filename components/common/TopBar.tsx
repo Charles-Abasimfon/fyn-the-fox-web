@@ -67,6 +67,11 @@ const TopBar = () => {
           isActive: pathname === '/property-owner/overview',
         },
         {
+          label: 'Tenants',
+          href: '/property-owner/tenants',
+          isActive: pathname === '/property-owner/tenants',
+        },
+        {
           label: 'Vendors',
           href: '/property-owner/vendors',
           isActive: pathname === '/property-owner/vendors',

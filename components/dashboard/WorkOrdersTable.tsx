@@ -62,6 +62,7 @@ export interface WorkOrdersTableProps {
   onUnassign?: (wo: WorkOrder) => void | Promise<void>;
   onManageSchedule?: (wo: WorkOrder) => void | Promise<void>;
   onDelete?: (wo: WorkOrder) => void | Promise<void>;
+  onEdit?: (wo: WorkOrder) => void | Promise<void>;
   // New optional props for vendor assignment wiring
   vendors?: VendorOption[];
   onAssignVendor?: (payload: {
@@ -108,6 +109,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   onUnassign,
   onManageSchedule,
   onDelete,
+  onEdit,
   vendors = [],
   onAssignVendor,
   onScheduleSet,
@@ -475,6 +477,16 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                           <img src='/icons/eye.svg' alt='View' />
                           <span className='text-sm font-medium'>
                             View Work Order
+                          </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        <DropdownMenuItem
+                          onClick={() => onEdit?.(c)}
+                          className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                        >
+                          <img src='/icons/user.svg' alt='Edit' />
+                          <span className='text-sm font-medium'>
+                            Edit Work Order
                           </span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className='bg-[#434343]' />
