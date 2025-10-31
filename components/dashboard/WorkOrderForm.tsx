@@ -8,6 +8,19 @@ import {
   CustomDialogFooter,
 } from '@/components/ui/custom-dialog';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 export interface WorkOrderFormValues {
   complain: string;
@@ -96,14 +109,24 @@ const WorkOrderFormDialog: React.FC<WorkOrderFormDialogProps> = ({
               setValues((v) => ({ ...v, category: e.target.value }))
             }
           />
-          <Input
-            label='Urgency (low, medium, high)'
-            placeholder='medium'
-            value={values.urgency}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, urgency: e.target.value }))
-            }
-          />
+          <div className='space-y-2'>
+            <label className='font-medium text-[#BDBDBE]'>Urgency</label>
+            <Select
+              value={values.urgency}
+              onValueChange={(v) =>
+                setValues((prev) => ({ ...prev, urgency: v }))
+              }
+            >
+              <SelectTrigger className='w-full h-10 bg-[#141414] border border-[#292828] rounded-md px-3 text-white text-sm font-medium outline-none focus:border-[#6B6B6B]'>
+                <SelectValue placeholder='Select urgency' />
+              </SelectTrigger>
+              <SelectContent className='bg-[#0F0F0F] border-[#292828] text-white'>
+                <SelectItem value='low'>Low</SelectItem>
+                <SelectItem value='medium'>Medium</SelectItem>
+                <SelectItem value='high'>High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Input
             label='User ID (Tenant)'
             placeholder='Tenant UUID'
@@ -120,12 +143,61 @@ const WorkOrderFormDialog: React.FC<WorkOrderFormDialogProps> = ({
               setValues((v) => ({ ...v, property_id: e.target.value }))
             }
           />
-          <Input
-            label='ETA (optional ISO datetime)'
-            placeholder='2025-10-28T14:00:00Z'
-            value={values.eta || ''}
-            onChange={(e) => setValues((v) => ({ ...v, eta: e.target.value }))}
-          />
+          <div className='space-y-2'>
+            <label className='font-medium text-[#BDBDBE]'>ETA (optional)</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type='button'
+                  className={cn(
+                    'w-full h-10 bg-[#141414] border border-[#292828] rounded-md px-3 text-white text-sm font-medium text-left outline-none focus:border-[#6B6B6B]',
+                    !values.eta && 'text-[#BDBDBE]'
+                  )}
+                >
+                  {(() => {
+                    if (!values.eta) return 'Pick a date';
+                    const d = new Date(values.eta);
+                    if (isNaN(d.getTime())) return 'Pick a date';
+                    return d.toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: '2-digit',
+                    });
+                  })()}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className='w-auto p-0 bg-[#0F0F0F] border-[#292828] text-white'>
+                <div className='p-2'>
+                  <Calendar
+                    mode='single'
+                    selected={
+                      values.eta &&
+                      !isNaN(new Date(values.eta as string).getTime())
+                        ? new Date(values.eta as string)
+                        : undefined
+                    }
+                    onSelect={(date) => {
+                      setValues((prev) => ({
+                        ...prev,
+                        eta: date ? new Date(date).toISOString() : '',
+                      }));
+                    }}
+                  />
+                  <div className='flex justify-end gap-2 p-2 pt-0'>
+                    <button
+                      type='button'
+                      className='px-3 py-1.5 rounded-md text-xs bg-[#1E1E1E] border border-[#292828] hover:bg-[#232323]'
+                      onClick={() =>
+                        setValues((prev) => ({ ...prev, eta: '' }))
+                      }
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </CustomDialogBody>
       <CustomDialogFooter>

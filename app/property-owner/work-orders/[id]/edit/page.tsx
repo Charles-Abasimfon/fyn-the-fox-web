@@ -57,7 +57,9 @@ export default function EditWorkOrderPage() {
           complain: values.complain.trim(),
           category: values.category.trim() || undefined,
           urgency: values.urgency.trim() || undefined,
-          eta: values.eta?.trim() || undefined,
+          eta: values.eta?.trim() || null,
+          scheduled_date: null,
+          status: 'resident-confirmation',
         },
       });
       addToast({

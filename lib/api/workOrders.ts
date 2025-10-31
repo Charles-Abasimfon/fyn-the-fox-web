@@ -10,7 +10,14 @@ export interface WorkOrderPayload {
   eta?: string | null; // ISO datetime
 }
 
-export interface WorkOrderUpdatePayload extends Partial<WorkOrderPayload> {}
+export interface WorkOrderUpdatePayload {
+  complain?: string;
+  scheduled_date?: string | null; // ISO datetime or null
+  category?: string;
+  urgency?: string;
+  eta?: string | null; // ISO datetime or null
+  status?: string;
+}
 
 export interface WorkOrderDetails {
   id: string;
@@ -19,6 +26,7 @@ export interface WorkOrderDetails {
   urgency?: string;
   status?: string;
   eta?: string | null;
+  scheduled_date?: string | null;
   property_id?: string;
   user_id?: string;
   createdAt?: string;
