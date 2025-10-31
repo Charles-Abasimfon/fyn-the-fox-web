@@ -298,6 +298,10 @@ const OverviewPage = () => {
             <ComplaintsTable
               complaints={complaintsData}
               vendors={assignVendors}
+              onEditWorkOrder={(c) => {
+                // navigate to work order edit page
+                window.location.href = `/property-owner/work-orders/${c.id}/edit`;
+              }}
               onAssignVendor={({ complaint, vendor }) => {
                 (async () => {
                   if (!accessToken) return;

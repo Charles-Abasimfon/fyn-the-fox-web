@@ -76,6 +76,7 @@ interface ComplaintsTableProps {
     vendor: VendorOption;
   }) => void;
   onScheduleSet?: (payload: { complaint: Complaint; date: string }) => void;
+  onEditWorkOrder?: (c: Complaint) => void | Promise<void>;
 }
 
 const getStatusStyles = (status: string) => {
@@ -124,6 +125,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
   onDeleteComplaint,
   onAssignVendor,
   onScheduleSet,
+  onEditWorkOrder,
 }) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null
@@ -451,6 +453,24 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                             </span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className='bg-[#434343]' /> */}
+                          <DropdownMenuItem
+                            onClick={() => onEditWorkOrder?.(complaint)}
+                            className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                          >
+                            {/* Using a simple inline SVG pencil icon for consistency */}
+                            <svg
+                              xmlns='http://www.w3.org/2000/svg'
+                              viewBox='0 0 24 24'
+                              fill='currentColor'
+                              className='size-4 text-white'
+                            >
+                              <path d='M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-0.92l8.06-8.06.92.92-8.06 8.06zM20.71 7.04a1 1 0 000-1.41L18.37 3.29a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z' />
+                            </svg>
+                            <span className='text-sm font-medium'>
+                              Edit Work Order
+                            </span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className='bg-[#434343]' />
                           <DropdownMenuItem
                             onClick={() => handleManageSchedule(complaint)}
                             className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
