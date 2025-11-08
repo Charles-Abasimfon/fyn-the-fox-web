@@ -505,7 +505,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                                   alt='Retract Vendor'
                                 />
                                 <span className='text-sm font-medium'>
-                                  Retract Vendor from Property
+                                  Retract Vendor
                                 </span>
                               </DropdownMenuItem>
                             </>
