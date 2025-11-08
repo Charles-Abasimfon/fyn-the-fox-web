@@ -10,6 +10,7 @@ import {
   assignVendor,
   setSchedule,
 } from '@/lib/api/complaints';
+import { retractVendorFromProperty } from '@/lib/api/properties';
 import { fetchVendors, RawVendor } from '@/lib/api/vendors';
 import {
   fetchDashboardStats,
@@ -24,9 +25,11 @@ interface Complaint {
   name: string;
   complaint: string;
   propertyAddress: string;
+  propertyId?: string; // for retracting vendor from property
   units: string;
   assignedTo: string;
   assignedRole: string;
+  vendorId?: string | null; // vendor currently assigned
   scheduledDate: string;
   scheduledTime: string;
   status:
@@ -118,9 +121,11 @@ const OverviewPage = () => {
       name: complainantName,
       complaint: c.complain,
       propertyAddress,
+      propertyId: c.property_id,
       units,
       assignedTo: vendorName,
       assignedRole: vendorRole,
+      vendorId: c.Vendor?.id || null,
       scheduledDate,
       scheduledTime,
       status: uiStatus,
@@ -361,6 +366,38 @@ const OverviewPage = () => {
                     addToast({
                       variant: 'error',
                       title: 'Schedule failed',
+                      description: msg,
+                    });
+                  }
+                })();
+              }}
+              onRetractVendorFromProperty={({ complaint }) => {
+                (async () => {
+                  if (!accessToken) return;
+                  if (!complaint.propertyId || !complaint.vendorId) return; // missing identifiers
+                  try {
+                    await retractVendorFromProperty({
+                      token: accessToken,
+                      payload: {
+                        property_id: complaint.propertyId,
+                        vendor_id: complaint.vendorId,
+                      },
+                    });
+                    addToast({
+                      variant: 'success',
+                      title: 'Vendor retracted',
+                      description: 'Vendor has been removed from the property',
+                    });
+                    loadComplaints();
+                    loadStats();
+                  } catch (e: any) {
+                    const msg =
+                      e instanceof ApiError
+                        ? e.message
+                        : 'Failed to retract vendor';
+                    addToast({
+                      variant: 'error',
+                      title: 'Retraction failed',
                       description: msg,
                     });
                   }

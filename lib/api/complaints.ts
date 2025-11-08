@@ -1,5 +1,6 @@
 import { ApiBaseResponse, ApiError } from './auth';
 import { getRuntimeApiBase } from './config';
+import { fetchWithAuth } from './http';
 
 export interface RawComplaint {
   id: string;
@@ -84,13 +85,11 @@ export async function fetchComplaints(params: {
   const url = new URL(base + '/complaints');
   url.searchParams.set('page', String(page));
   url.searchParams.set('limit', String(limit));
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
+  const res = await fetchWithAuth(
+    url.toString(),
+    { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
+    token
+  );
 
   let json: ApiBaseResponse<ComplaintsListResponse> | null = null;
   try {
@@ -121,14 +120,15 @@ export async function assignVendor(params: {
 }): Promise<RawComplaint> {
   const { token, payload } = params;
   const base = getBase();
-  const res = await fetch(`${base}/complaints/assign-vendor`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/complaints/assign-vendor`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    token
+  );
 
   let json: ApiBaseResponse<AssignVendorResponse> | null = null;
   try {
@@ -161,14 +161,15 @@ export async function updateComplaintStatus({
   status,
 }: UpdateComplaintStatusParams): Promise<RawComplaint> {
   const base = getBase();
-  const res = await fetch(`${base}/complaints/${id}/status`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/complaints/${id}/status`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
     },
-    body: JSON.stringify({ status }),
-  });
+    token
+  );
 
   let json: ApiBaseResponse<UpdateComplaintStatusResponse> | null = null;
   try {
@@ -197,13 +198,11 @@ export async function acceptWorkOrder({
   id: string;
 }): Promise<RawComplaint> {
   const base = getBase();
-  const res = await fetch(`${base}/complaints/accept-work-order/${id}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const res = await fetchWithAuth(
+    `${base}/complaints/accept-work-order/${id}`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' } },
+    token
+  );
 
   let json: ApiBaseResponse<AcceptWorkOrderResponse> | null = null;
   try {
@@ -237,14 +236,15 @@ export async function setSchedule({
   payload: SetSchedulePayload;
 }): Promise<RawComplaint> {
   const base = getBase();
-  const res = await fetch(`${base}/complaints/set-schedule`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/complaints/set-schedule`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    token
+  );
 
   let json: ApiBaseResponse<SetScheduleResponse> | null = null;
   try {

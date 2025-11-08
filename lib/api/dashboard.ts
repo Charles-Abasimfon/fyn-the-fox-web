@@ -1,5 +1,6 @@
 import { ApiBaseResponse, ApiError } from './auth';
 import { getRuntimeApiBase } from './config';
+import { fetchWithAuth } from './http';
 
 export interface DashboardStatsResponse {
   total_complaints: number; // maps from stats.total
@@ -24,13 +25,11 @@ export async function fetchDashboardStats(params: {
   const { token } = params;
   const base = getBase();
   const url = base + '/dashboard';
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
+  const res = await fetchWithAuth(
+    url,
+    { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
+    token
+  );
   let json: ApiBaseResponse<
     { stats: DashboardStatsResponse } & Partial<DashboardStatsResponse>
   > | null = null;

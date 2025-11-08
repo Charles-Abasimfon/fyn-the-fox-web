@@ -40,9 +40,11 @@ interface Complaint {
   name: string;
   complaint: string;
   propertyAddress: string;
+  propertyId?: string;
   units: string;
   assignedTo: string;
   assignedRole: string;
+  vendorId?: string | null;
   scheduledDate: string;
   scheduledTime: string;
   status:
@@ -77,6 +79,9 @@ interface ComplaintsTableProps {
   }) => void;
   onScheduleSet?: (payload: { complaint: Complaint; date: string }) => void;
   onEditWorkOrder?: (c: Complaint) => void | Promise<void>;
+  onRetractVendorFromProperty?: (payload: {
+    complaint: Complaint;
+  }) => void | Promise<void>;
 }
 
 const getStatusStyles = (status: string) => {
@@ -126,6 +131,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
   onAssignVendor,
   onScheduleSet,
   onEditWorkOrder,
+  onRetractVendorFromProperty,
 }) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null
@@ -483,6 +489,27 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                               Manage Schedule Date
                             </span>
                           </DropdownMenuItem>
+                          {complaint.vendorId ? (
+                            <>
+                              <DropdownMenuSeparator className='bg-[#434343]' />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onRetractVendorFromProperty?.({
+                                    complaint,
+                                  })
+                                }
+                                className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                              >
+                                <img
+                                  src='/icons/user-x.svg'
+                                  alt='Retract Vendor'
+                                />
+                                <span className='text-sm font-medium'>
+                                  Retract Vendor from Property
+                                </span>
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
                           {/* <DropdownMenuSeparator className='bg-[#434343]' />
                           <DropdownMenuItem
                             onClick={() => onDeleteComplaint?.(complaint)}

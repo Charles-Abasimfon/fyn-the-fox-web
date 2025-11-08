@@ -32,9 +32,11 @@ export interface WorkOrder {
   name: string;
   complaint: string;
   propertyAddress: string;
+  propertyId: string; // API id of the property
   units: string;
   assignedTo: string;
   assignedRole: string;
+  vendorId?: string | null; // currently assigned vendor id if any
   scheduledDate: string; // e.g. "Apr 12, 2023"
   scheduledTime: string; // e.g. "14:00"
   status:
@@ -70,6 +72,9 @@ export interface WorkOrdersTableProps {
     vendor: VendorOption;
   }) => void | Promise<void>;
   onScheduleSet?: (payload: { complaint: WorkOrder; date: string }) => void;
+  onRetractVendorFromProperty?: (payload: {
+    complaint: WorkOrder;
+  }) => void | Promise<void>;
 }
 
 const getStatusStyles = (status: string) => {
@@ -113,6 +118,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   vendors = [],
   onAssignVendor,
   onScheduleSet,
+  onRetractVendorFromProperty,
 }) => {
   const [statusFilter, setStatusFilter] = useState<
     | 'All'
@@ -509,6 +515,25 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                             Manage Schedule
                           </span>
                         </DropdownMenuItem>
+                        {c.vendorId ? (
+                          <>
+                            <DropdownMenuSeparator className='bg-[#434343]' />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                onRetractVendorFromProperty?.({ complaint: c })
+                              }
+                              className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                            >
+                              <img
+                                src='/icons/user-x.svg'
+                                alt='Retract Vendor'
+                              />
+                              <span className='text-sm font-medium'>
+                                Retract Vendor from Property
+                              </span>
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>

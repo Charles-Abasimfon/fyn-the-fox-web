@@ -15,6 +15,7 @@ import { ApiError } from '@/lib/api/auth';
 import { fetchVendors, RawVendor } from '@/lib/api/vendors';
 import { useToast } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
+import { retractVendorFromProperty } from '@/lib/api/properties';
 
 // Map RawComplaint (API) -> WorkOrder (UI)
 function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
@@ -61,9 +62,11 @@ function mapComplaintToWorkOrder(c: RawComplaint): WorkOrder {
     name: complainantName,
     complaint: c.complain,
     propertyAddress,
+    propertyId: c.property_id,
     units,
     assignedTo: vendorName,
     assignedRole: vendorRole,
+    vendorId: c.Vendor?.id || null,
     scheduledDate,
     scheduledTime,
     status,
@@ -236,6 +239,36 @@ const WorkOrdersPage = () => {
                 addToast({
                   variant: 'error',
                   title: 'Schedule failed',
+                  description: msg,
+                });
+              }
+            })();
+          }}
+          onRetractVendorFromProperty={({ complaint }) => {
+            (async () => {
+              if (!accessToken) return;
+              try {
+                await retractVendorFromProperty({
+                  token: accessToken,
+                  payload: {
+                    property_id: String((complaint as any).propertyId),
+                    vendor_id: String((complaint as any).vendorId),
+                  },
+                });
+                addToast({
+                  variant: 'success',
+                  title: 'Vendor retracted',
+                  description: 'Vendor has been retracted from the property',
+                });
+                load();
+              } catch (e: any) {
+                const msg =
+                  e instanceof ApiError
+                    ? e.message
+                    : 'Failed to retract vendor';
+                addToast({
+                  variant: 'error',
+                  title: 'Retraction failed',
                   description: msg,
                 });
               }

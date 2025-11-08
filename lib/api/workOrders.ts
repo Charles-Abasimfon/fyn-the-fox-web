@@ -1,5 +1,6 @@
 import { ApiBaseResponse, ApiError } from './auth';
 import { getRuntimeApiBase } from './config';
+import { fetchWithAuth } from './http';
 
 export interface WorkOrderPayload {
   complain: string; // complaint description
@@ -49,21 +50,22 @@ export async function createWorkOrder({
   payload: WorkOrderPayload;
 }): Promise<WorkOrderDetails> {
   const base = getBase();
-  const res = await fetch(`${base}/complaints/create`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/complaints/create`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // Send only server-expected fields
+      body: JSON.stringify({
+        complain: payload.complain,
+        user_id: payload.user_id,
+        category: payload.category,
+        urgency: payload.urgency,
+        property_id: payload.property_id,
+      }),
     },
-    // Send only server-expected fields
-    body: JSON.stringify({
-      complain: payload.complain,
-      user_id: payload.user_id,
-      category: payload.category,
-      urgency: payload.urgency,
-      property_id: payload.property_id,
-    }),
-  });
+    token
+  );
 
   let json: ApiBaseResponse<
     { complaint: WorkOrderDetails } | WorkOrderDetails
@@ -96,14 +98,15 @@ export async function updateWorkOrder({
   payload: WorkOrderUpdatePayload;
 }): Promise<WorkOrderDetails> {
   const base = getBase();
-  const res = await fetch(`${base}/complaints/${id}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/complaints/${id}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    token
+  );
 
   let json: ApiBaseResponse<
     { complaint: WorkOrderDetails } | WorkOrderDetails
@@ -133,12 +136,11 @@ export async function fetchWorkOrderById({
   id: string | number;
 }): Promise<WorkOrderDetails> {
   const base = getBase();
-  const res = await fetch(`${base}/complaints/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const res = await fetchWithAuth(
+    `${base}/complaints/${id}`,
+    { headers: { 'Content-Type': 'application/json' } },
+    token
+  );
   let json: ApiBaseResponse<
     { complaint: WorkOrderDetails } | WorkOrderDetails
   > | null = null;

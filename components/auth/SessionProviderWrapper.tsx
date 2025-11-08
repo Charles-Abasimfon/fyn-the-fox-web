@@ -7,14 +7,12 @@ interface Props {
   children: React.ReactNode;
 }
 
-// Inner watcher to auto sign out when token error is flagged
+// Inner watcher: only sign out when the refresh token is actually expired.
+// Do NOT auto sign out on transient refresh failures — allow client fetch to retry.
 function SessionErrorWatcher() {
   const { data: session } = useSession();
   useEffect(() => {
-    if (
-      session?.error === 'RefreshAccessTokenError' ||
-      session?.error === 'RefreshTokenExpired'
-    ) {
+    if (session?.error === 'RefreshTokenExpired') {
       signOut({ callbackUrl: '/sign-in' });
     }
   }, [session?.error]);

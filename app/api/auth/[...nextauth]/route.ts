@@ -1,6 +1,11 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import { AppMode } from '@/lib/api/config';
+
+// Force Node.js runtime for this route handler. NextAuth requires Node APIs (e.g., Buffer).
+export const runtime = 'nodejs';
+
+// Define AppMode locally to avoid importing client-only modules in a server route
+type AppMode = 'property' | 'hospitality';
 
 // Expected API login response shape
 interface LoginResponse {
@@ -64,15 +69,11 @@ async function refreshAccessToken(params: {
   const baseUrl = rawBase.replace(/\/$/, '');
   try {
     const res = await fetch(`${baseUrl}/auth/refresh-token`, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        // API spec: send refresh-token in Authorization header. Some APIs expect 'Bearer <token>'.
-        // If your API expects bare token, adjust below accordingly.
+        // API spec: send refresh-token in Authorization header (Bearer scheme)
         Authorization: `Bearer ${refreshToken}`,
-        'Content-Type': 'application/json',
       },
-      // body could be empty if API only uses header; keep empty object to be explicit
-      body: JSON.stringify({}),
       cache: 'no-store',
     });
     const json = await res.json().catch(() => null);
@@ -81,7 +82,7 @@ async function refreshAccessToken(params: {
     }
     const newAccess = json?.data?.access_token as string | undefined;
     const newRefresh = json?.data?.refresh_token as string | undefined;
-    if (!newAccess || !newRefresh) {
+    if (!newAccess) {
       return { ...params, error: 'MalformedRefreshResponse' };
     }
     const accessTokenExpires =
@@ -89,7 +90,7 @@ async function refreshAccessToken(params: {
     const refreshTokenExpires = decodeJwtExpiry(newRefresh); // may be 15m according to spec
     return {
       accessToken: newAccess,
-      refreshToken: newRefresh,
+      refreshToken: newRefresh || params.refreshToken,
       accessTokenExpires,
       refreshTokenExpires,
     };
@@ -247,6 +248,7 @@ const handler = NextAuth({
       console.log('[auth][session] building session for userId:', token.userId);
       // Populate session with access token and user info
       (session as any).accessToken = token.accessToken;
+      (session as any).refreshToken = token.refreshToken;
       (session as any).error = token.error;
       (session as any).mode = (token as any).mode || 'property';
 

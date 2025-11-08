@@ -1,5 +1,6 @@
 import { ApiBaseResponse, ApiError } from './auth';
 import { getRuntimeApiBase } from './config';
+import { fetchWithAuth } from './http';
 
 export interface RawVendorInfoAvailability {
   [day: string]: string;
@@ -52,13 +53,11 @@ export async function fetchVendors(params: {
   const url = new URL(base + '/users/fetch/vendors');
   url.searchParams.set('page', String(page));
   url.searchParams.set('limit', String(limit));
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
+  const res = await fetchWithAuth(
+    url.toString(),
+    { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
+    token
+  );
 
   let json: ApiBaseResponse<VendorsListResponse> | null = null;
   try {
@@ -81,13 +80,11 @@ export async function deleteVendor(params: {
   const { token, id } = params;
   const base = getBase();
   const url = `${base}/users/delete/vendors/${id}`;
-  const res = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const res = await fetchWithAuth(
+    url,
+    { method: 'DELETE', headers: { 'Content-Type': 'application/json' } },
+    token
+  );
   let json: ApiBaseResponse<any> | null = null;
   try {
     json = await res.json();
@@ -121,14 +118,15 @@ export async function addVendor(params: {
 }): Promise<RawVendor> {
   const { token, payload } = params;
   const base = getBase();
-  const res = await fetch(`${base}/users/register/vendors`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/users/register/vendors`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    token
+  );
   let json: ApiBaseResponse<AddVendorResponse> | null = null;
   try {
     json = await res.json();
@@ -166,14 +164,15 @@ export async function updateVendor(params: {
 }): Promise<RawVendor | null> {
   const { token, id, payload } = params;
   const base = getBase();
-  const res = await fetch(`${base}/users/update/vendors/${id}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/users/update/vendors/${id}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    token
+  );
   let json: ApiBaseResponse<UpdateVendorResponse> | null = null;
   try {
     json = await res.json();

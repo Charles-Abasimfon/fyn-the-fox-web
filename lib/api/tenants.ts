@@ -1,5 +1,6 @@
 import { ApiBaseResponse, ApiError } from './auth';
 import { getRuntimeApiBase } from './config';
+import { fetchWithAuth } from './http';
 
 export interface RawTenant {
   id: string;
@@ -63,13 +64,11 @@ export async function fetchTenants({
   const url = new URL(base + '/users/fetch/property-users');
   url.searchParams.set('page', String(page));
   url.searchParams.set('limit', String(limit));
-  const res = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
+  const res = await fetchWithAuth(
+    url.toString(),
+    { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
+    token
+  );
   // API returns: { data: { users: RawTenant[], pagination: {...} } }
   let json: ApiBaseResponse<{
     users: RawTenant[];
@@ -100,14 +99,15 @@ export async function addTenant({
   payload: AddTenantPayload;
 }): Promise<RawTenant> {
   const base = getBase();
-  const res = await fetch(`${base}/users/register/property-users`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  const res = await fetchWithAuth(
+    `${base}/users/register/property-users`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+    token
+  );
   let json: ApiBaseResponse<{ tenant: RawTenant } | RawTenant> | null = null;
   try {
     json = await res.json();
@@ -134,13 +134,11 @@ export async function fetchTenantById({
   id: string | number;
 }): Promise<RawTenant> {
   const base = getBase();
-  const res = await fetch(`${base}/users/fetch/property-users/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
+  const res = await fetchWithAuth(
+    `${base}/users/fetch/property-users/${id}`,
+    { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
+    token
+  );
   let json: ApiBaseResponse<
     { user?: any } | { user: { user: RawTenant } } | RawTenant
   > | null = null;
@@ -168,13 +166,11 @@ export async function deleteTenant({
   id: string | number;
 }): Promise<void> {
   const base = getBase();
-  const res = await fetch(`${base}/users/delete/property-users/${id}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const res = await fetchWithAuth(
+    `${base}/users/delete/property-users/${id}`,
+    { method: 'DELETE', headers: { 'Content-Type': 'application/json' } },
+    token
+  );
   let json: ApiBaseResponse<any> | null = null;
   try {
     json = await res.json();
