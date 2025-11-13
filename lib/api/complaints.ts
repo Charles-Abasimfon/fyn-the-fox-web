@@ -12,9 +12,14 @@ export interface RawComplaint {
   status: string;
   createdAt: string;
   updatedAt: string;
-  user_id: string;
+  user_id: string | null; // can be null in new flattened response
   assigned_to: string | null;
-  property_id: string;
+  property_id: string | null; // can be null in new flattened response
+  // Flattened fallback fields (new API variant when nested relations omitted)
+  full_name?: string; // complainant full name
+  phone_number?: string;
+  unit_number?: string; // apartment/unit number
+  address?: string; // combined property address string
   Property?: {
     id: string;
     name: string;

@@ -29,19 +29,23 @@ const statusMapFromApi: Record<string, VendorOrderStatus> = {
 function mapComplaintToVendorItem(c: RawComplaint): VendorWorkOrderItem {
   const tenantName = c.Complainant
     ? `${c.Complainant.first_name} ${c.Complainant.last_name}`
-    : 'Unknown';
+    : c.full_name || 'Unknown';
 
-  // Try to get property address, fallback to apartment info if not available
+  // Try to get property address, fallback to apartment info or flattened address if not available
   const address = c.Property?.Address;
   let propertyAddress: string;
   if (address) {
     propertyAddress = [address.street, address.city].filter(Boolean).join(', ');
   } else if (c.Property?.name) {
     propertyAddress = c.Property.name;
-  } else if (c.Complainant?.TenantInfo) {
-    const floor = c.Complainant.TenantInfo.floor_number;
-    const apt = c.Complainant.TenantInfo.apartment_number;
-    propertyAddress = `Apt ${apt}, Floor ${floor}`;
+  } else if (c.address) {
+    propertyAddress = c.address;
+  } else if (c.Complainant?.TenantInfo || c.unit_number) {
+    const floor = c.Complainant?.TenantInfo?.floor_number;
+    const apt = c.Complainant?.TenantInfo?.apartment_number || c.unit_number;
+    propertyAddress = apt
+      ? `Apt ${apt}${floor ? ', Floor ' + floor : ''}`
+      : '-';
   } else {
     propertyAddress = '-';
   }

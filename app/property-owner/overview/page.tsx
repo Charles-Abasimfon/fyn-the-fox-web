@@ -76,9 +76,10 @@ const OverviewPage = () => {
   const [vendorsError, setVendorsError] = useState<string | null>(null);
 
   const mapComplaint = useCallback((c: RawComplaint): Complaint => {
+    // Prefer nested complainant name; fallback to flattened full_name
     const complainantName = c.Complainant
       ? `${c.Complainant.first_name} ${c.Complainant.last_name}`
-      : 'Unknown';
+      : c.full_name || 'Unknown';
     const vendorName = c.Vendor
       ? `${c.Vendor.first_name} ${c.Vendor.last_name}`
       : '-';
@@ -86,8 +87,9 @@ const OverviewPage = () => {
     const address = c.Property?.Address;
     const propertyAddress = address
       ? [address.street, address.city].filter(Boolean).join(', ')
-      : c.Property?.name || '-';
-    const units = c.Complainant?.TenantInfo?.apartment_number || '-';
+      : c.Property?.name || c.address || '-';
+    const units =
+      c.Complainant?.TenantInfo?.apartment_number || c.unit_number || '-';
 
     // Interpret scheduling: use eta if present
     const dt = c.eta ? new Date(c.eta) : null;
@@ -121,7 +123,7 @@ const OverviewPage = () => {
       name: complainantName,
       complaint: c.complain,
       propertyAddress,
-      propertyId: c.property_id,
+      propertyId: c.property_id || undefined,
       units,
       assignedTo: vendorName,
       assignedRole: vendorRole,
