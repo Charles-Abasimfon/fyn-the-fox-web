@@ -435,7 +435,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                           >
                             <img src='/icons/eye.svg' alt='View' />
                             <span className='text-sm font-medium'>
-                              View Complaint
+                              View Work Order
                             </span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className='bg-[#434343]' />
@@ -445,7 +445,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                           >
                             <img src='/icons/user.svg' alt='View' />
                             <span className='text-sm font-medium'>
-                              Assign Complaint
+                              Assign Work Order
                             </span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className='bg-[#434343]' />
