@@ -495,7 +495,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                             Edit Work Order
                           </span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        {/* <DropdownMenuSeparator className='bg-[#434343]' />
                         <DropdownMenuItem
                           onClick={() => handleAssign(c)}
                           className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
@@ -504,7 +504,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                           <span className='text-sm font-medium'>
                             Update Work Order
                           </span>
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
                         <DropdownMenuSeparator className='bg-[#434343]' />
                         <DropdownMenuItem
                           onClick={() => handleSchedule(c)}
