@@ -271,10 +271,7 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
                         <DropdownMenuItem
                           onClick={() => onAccept?.(c)}
                           className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
-                          disabled={
-                            c.status === 'In Progress' ||
-                            c.status === 'Completed'
-                          }
+                          disabled={c.status !== 'Pending vendors acceptance'}
                         >
                           <img src='/icons/user.svg' alt='Accept' />
                           <span className='text-sm font-medium'>
@@ -296,7 +293,10 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
                         <DropdownMenuItem
                           onClick={() => onNeedsEstimate?.(c)}
                           className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
-                          disabled={c.status === 'Completed'}
+                          disabled={
+                            c.status === 'Completed' ||
+                            c.status === 'Estimate needed'
+                          }
                         >
                           <img
                             src='/icons/in-progress.svg'

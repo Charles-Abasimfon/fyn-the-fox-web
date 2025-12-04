@@ -167,7 +167,7 @@ export async function updateComplaintStatus({
 }: UpdateComplaintStatusParams): Promise<RawComplaint> {
   const base = getBase();
   const res = await fetchWithAuth(
-    `${base}/complaints/${id}/status`,
+    `${base}/complaints/update-status/${id}`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
