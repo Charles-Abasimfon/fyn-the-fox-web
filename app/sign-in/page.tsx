@@ -31,7 +31,7 @@ function SignInInner() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  type ViewMode = 'property' | 'hospitality';
+  type ViewMode = 'property' | 'hospitality' | 'vendor';
   const [view, setView] = useState<ViewMode>('property');
 
   // Initialize view from URL or localStorage, and ensure URL contains it
@@ -43,8 +43,13 @@ function SignInInner() {
           ? (localStorage.getItem('fyn_view') || '').toLowerCase()
           : '';
       let initial: ViewMode = 'property';
-      if (qp === 'hospitality' || qp === 'property') initial = qp as ViewMode;
-      else if (stored === 'hospitality' || stored === 'property')
+      if (qp === 'hospitality' || qp === 'property' || qp === 'vendor')
+        initial = qp as ViewMode;
+      else if (
+        stored === 'hospitality' ||
+        stored === 'property' ||
+        stored === 'vendor'
+      )
         initial = stored as ViewMode;
       setView(initial);
 
@@ -110,8 +115,8 @@ function SignInInner() {
           // Retrieve session to read role then redirect accordingly
           const sess = await getSession();
           const role = (sess as any)?.user?.role as string | undefined;
-          const query = `?view=${view}`;
-          if (role && role.toLowerCase() === 'vendor') {
+          const query = `?view=${view === 'vendor' ? 'property' : view}`;
+          if (view === 'vendor' || (role && role.toLowerCase() === 'vendor')) {
             router.push(`/vendor${query}`);
           } else if (view === 'hospitality') {
             router.push(`/hospitality/overview${query}`);
@@ -170,7 +175,7 @@ function SignInInner() {
             {/* View Toggle */}
             <div className='flex w-full items-center justify-center sm:justify-start'>
               <div
-                className='w-full grid grid-cols-2 gap-1 rounded-lg border border-[#434343] bg-[#0f0f10] p-1'
+                className='w-full grid grid-cols-3 gap-1 rounded-lg border border-[#434343] bg-[#0f0f10] p-1'
                 role='tablist'
                 aria-label='Select vertical'
               >
@@ -179,7 +184,7 @@ function SignInInner() {
                   role='tab'
                   aria-selected={view === 'property'}
                   onClick={() => updateView('property')}
-                  className={`w-full px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                  className={`w-full px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
                     view === 'property'
                       ? 'bg-primary text-white shadow'
                       : 'text-[#B7B7B8] hover:text-white'
@@ -192,13 +197,26 @@ function SignInInner() {
                   role='tab'
                   aria-selected={view === 'hospitality'}
                   onClick={() => updateView('hospitality')}
-                  className={`w-full px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                  className={`w-full px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
                     view === 'hospitality'
                       ? 'bg-primary text-white shadow'
                       : 'text-[#B7B7B8] hover:text-white'
                   }`}
                 >
                   Hospitality
+                </button>
+                <button
+                  type='button'
+                  role='tab'
+                  aria-selected={view === 'vendor'}
+                  onClick={() => updateView('vendor')}
+                  className={`w-full px-2 sm:px-3 py-1.5 rounded-md text-sm font-medium text-center transition-colors ${
+                    view === 'vendor'
+                      ? 'bg-primary text-white shadow'
+                      : 'text-[#B7B7B8] hover:text-white'
+                  }`}
+                >
+                  Vendor
                 </button>
               </div>
             </div>
