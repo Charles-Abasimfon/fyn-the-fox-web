@@ -9,7 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  MoreVertical,
+  FileText,
+} from 'lucide-react';
 
 export type VendorOrderStatus =
   | 'Assigned'
@@ -37,6 +43,8 @@ export interface VendorWorkOrdersTableProps {
   onComplete?: (item: VendorWorkOrderItem) => void | Promise<void>;
   onNeedsEstimate?: (item: VendorWorkOrderItem) => void | Promise<void>;
   onView?: (item: VendorWorkOrderItem) => void;
+  onChat?: (item: VendorWorkOrderItem) => void;
+  onAddEstimate?: (item: VendorWorkOrderItem) => void;
 }
 
 const getStatusStyles = (status: string) => {
@@ -75,6 +83,8 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
   onComplete,
   onNeedsEstimate,
   onView,
+  onChat,
+  onAddEstimate,
 }) => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -88,7 +98,7 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
         ? c.tenantName.toLowerCase().includes(q) ||
           c.complaint.toLowerCase().includes(q) ||
           c.propertyAddress.toLowerCase().includes(q)
-        : true
+        : true,
     );
   }, [items, search]);
 
@@ -233,7 +243,7 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
                   <td className='py-4 px-4'>
                     <span
                       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] text-xs font-medium border ${getStatusStyles(
-                        c.status
+                        c.status,
                       )}`}
                     >
                       <img
@@ -306,6 +316,24 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
                             Needs Estimate
                           </span>
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        <DropdownMenuItem
+                          onClick={() => onChat?.(c)}
+                          className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                        >
+                          <MessageSquare className='h-4 w-4 text-[#BDBDBE]' />
+                          <span className='text-sm font-medium'>Chat</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        <DropdownMenuItem
+                          onClick={() => onAddEstimate?.(c)}
+                          className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                        >
+                          <FileText className='h-4 w-4 text-[#BDBDBE]' />
+                          <span className='text-sm font-medium'>
+                            Add Estimate
+                          </span>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -361,7 +389,7 @@ const VendorWorkOrdersTable: React.FC<VendorWorkOrdersTableProps> = ({
                 >
                   {p}
                 </button>
-              )
+              ),
             )}
             <button
               onClick={() => setPage((c) => Math.min(c + 1, totalPages))}

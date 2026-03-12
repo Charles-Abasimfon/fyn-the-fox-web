@@ -3,6 +3,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import OverviewCard from '@/components/dashboard/OverviewCard';
 import ComplaintsTable from '@/components/dashboard/ComplaintsTable';
 import VendorsList from '@/components/dashboard/VendorsList';
+import WorkOrderChat from '@/components/dashboard/WorkOrderChat';
+import {
+  CustomDialog,
+  CustomDialogHeader,
+  CustomDialogBody,
+} from '@/components/ui/custom-dialog';
 import { useSession } from 'next-auth/react';
 import {
   fetchComplaints,
@@ -74,6 +80,10 @@ const OverviewPage = () => {
   const [assignVendors, setAssignVendors] = useState<AssignVendorOption[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [vendorsError, setVendorsError] = useState<string | null>(null);
+
+  // Standalone chat dialog state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatComplaint, setChatComplaint] = useState<Complaint | null>(null);
 
   const mapComplaint = useCallback((c: RawComplaint): Complaint => {
     // Prefer nested complainant name; fallback to flattened full_name
@@ -183,7 +193,7 @@ const OverviewPage = () => {
         status,
       };
     },
-    []
+    [],
   );
 
   const mapAssignVendor = useCallback((v: RawVendor): AssignVendorOption => {
@@ -405,6 +415,10 @@ const OverviewPage = () => {
                   }
                 })();
               }}
+              onChat={(c) => {
+                setChatComplaint(c);
+                setChatOpen(true);
+              }}
             />
           )}
         </div>
@@ -433,6 +447,40 @@ const OverviewPage = () => {
           )}
         </div>
       </div>
+
+      {/* Standalone Chat Dialog */}
+      <CustomDialog
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        className='max-w-lg'
+      >
+        <CustomDialogHeader title='Chat' />
+        <CustomDialogBody className='flex flex-col'>
+          <div className='flex-1 min-h-0 flex flex-col'>
+            {accessToken && chatComplaint ? (
+              <WorkOrderChat
+                complaintId={chatComplaint.id}
+                accessToken={accessToken}
+                currentUserId={(session as any)?.user?.id}
+                currentUserName={
+                  session?.user?.name ||
+                  [session?.user?.firstName, session?.user?.lastName]
+                    .filter(Boolean)
+                    .join(' ') ||
+                  undefined
+                }
+                currentUserRole={
+                  (session as any)?.user?.role || 'property_owner'
+                }
+              />
+            ) : (
+              <div className='text-center py-8 text-[#BDBDBE]'>
+                Please sign in to use chat.
+              </div>
+            )}
+          </div>
+        </CustomDialogBody>
+      </CustomDialog>
     </div>
   );
 };

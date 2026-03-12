@@ -45,6 +45,16 @@ const VendorTopBar = () => {
       href: '/vendor/work-orders',
       isActive: pathname === '/vendor/work-orders',
     },
+    {
+      label: 'Estimates',
+      href: '/vendor/estimates',
+      isActive: pathname === '/vendor/estimates',
+    },
+    {
+      label: 'Invoices',
+      href: '/vendor/invoices',
+      isActive: pathname === '/vendor/invoices',
+    },
   ];
 
   const handleNavigation = (href: string) => {

@@ -79,7 +79,17 @@ const TopBar = () => {
         {
           label: 'Work Orders',
           href: '/property-owner/work-orders',
-          isActive: pathname === '/property-owner/work-orders',
+          isActive: pathname.startsWith('/property-owner/work-orders'),
+        },
+        {
+          label: 'Estimates',
+          href: '/property-owner/estimates',
+          isActive: pathname === '/property-owner/estimates',
+        },
+        {
+          label: 'Invoices',
+          href: '/property-owner/invoices',
+          isActive: pathname === '/property-owner/invoices',
         },
       ];
 

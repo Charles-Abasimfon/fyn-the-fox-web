@@ -22,7 +22,13 @@ import {
   PopoverContent,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  FileText,
+} from 'lucide-react';
 import ViewComplaint from './ViewComplaint';
 import AssignComplaint from './AssignComplaint';
 import ScheduleComplaint from './ScheduleComplaint';
@@ -60,11 +66,13 @@ export interface VendorOption {
 export interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
   onView?: (wo: WorkOrder) => void | Promise<void>;
+  onChat?: (wo: WorkOrder) => void | Promise<void>;
   onAssign?: (wo: WorkOrder) => void | Promise<void>;
   onUnassign?: (wo: WorkOrder) => void | Promise<void>;
   onManageSchedule?: (wo: WorkOrder) => void | Promise<void>;
   onDelete?: (wo: WorkOrder) => void | Promise<void>;
   onEdit?: (wo: WorkOrder) => void | Promise<void>;
+  onEstimates?: (wo: WorkOrder) => void | Promise<void>;
   // New optional props for vendor assignment wiring
   vendors?: VendorOption[];
   onAssignVendor?: (payload: {
@@ -110,11 +118,13 @@ const getStatusIcon = (status: string) => {
 const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
   workOrders,
   onView,
+  onChat,
   onAssign,
   onUnassign,
   onManageSchedule,
   onDelete,
   onEdit,
+  onEstimates,
   vendors = [],
   onAssignVendor,
   onScheduleSet,
@@ -152,7 +162,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
 
   const dateLabel = useMemo(
     () => (date ? formatDate(date) : 'Custom date'),
-    [date]
+    [date],
   );
 
   const filtered = useMemo(() => {
@@ -163,7 +173,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
       const dOnly = new Date(
         parsed.getFullYear(),
         parsed.getMonth(),
-        parsed.getDate()
+        parsed.getDate(),
       );
       const sel = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       return dOnly.getTime() === sel.getTime();
@@ -451,7 +461,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                   <td className='py-4 px-4'>
                     <span
                       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] text-xs font-medium border ${getStatusStyles(
-                        c.status
+                        c.status,
                       )}`}
                     >
                       <img
@@ -495,6 +505,14 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                             Edit Work Order
                           </span>
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        <DropdownMenuItem
+                          onClick={() => onEstimates?.(c)}
+                          className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                        >
+                          <FileText className='h-4 w-4 text-[#BDBDBE]' />
+                          <span className='text-sm font-medium'>Estimates</span>
+                        </DropdownMenuItem>
                         {/* <DropdownMenuSeparator className='bg-[#434343]' />
                         <DropdownMenuItem
                           onClick={() => handleAssign(c)}
@@ -514,6 +532,14 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                           <span className='text-sm font-medium'>
                             Manage Schedule
                           </span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className='bg-[#434343]' />
+                        <DropdownMenuItem
+                          onClick={() => onChat?.(c)}
+                          className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                        >
+                          <MessageSquare className='h-4 w-4 text-[#BDBDBE]' />
+                          <span className='text-sm font-medium'>Chat</span>
                         </DropdownMenuItem>
                         {c.vendorId ? (
                           <>
@@ -598,7 +624,7 @@ const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                 >
                   {p}
                 </button>
-              )
+              ),
             )}
             <button
               onClick={() => setPage((c) => Math.min(c + 1, totalPages))}

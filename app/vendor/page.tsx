@@ -6,7 +6,10 @@ import VendorWorkOrdersTable, {
   VendorWorkOrderItem,
   VendorOrderStatus,
 } from '@/components/dashboard/VendorWorkOrdersTable';
-import ViewWorkOrder from '@/components/dashboard/ViewWorkOrder';
+import VendorWorkOrderDetail from '@/components/dashboard/VendorWorkOrderDetail';
+import VendorPerformanceCard, {
+  VendorMetrics,
+} from '@/components/dashboard/VendorPerformanceCard';
 import {
   fetchComplaints,
   RawComplaint,
@@ -87,15 +90,49 @@ export default function VendorDashboardPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedWorkOrder, setSelectedWorkOrder] =
     useState<VendorWorkOrderItem | null>(null);
+  const [detailInitialTab, setDetailInitialTab] = useState<
+    'details' | 'estimates' | 'invoices' | 'chat' | undefined
+  >(undefined);
 
   const stats = useMemo(() => {
     const total = items.length;
     const open = items.filter((i) => i.status !== 'Completed').length;
     const completed = items.filter((i) => i.status === 'Completed').length;
     const pendingAcceptance = items.filter(
-      (i) => i.status === 'Pending vendors acceptance'
+      (i) => i.status === 'Pending vendors acceptance',
     ).length;
-    return { total, open, completed, pendingAcceptance };
+    const inProgress = items.filter((i) => i.status === 'In Progress').length;
+    return { total, open, completed, pendingAcceptance, inProgress };
+  }, [items]);
+
+  // Calculate performance metrics
+  const performanceMetrics: VendorMetrics = useMemo(() => {
+    const total = items.length;
+    const completed = items.filter((i) => i.status === 'Completed').length;
+    const pending = items.filter(
+      (i) =>
+        i.status === 'Pending' || i.status === 'Pending vendors acceptance',
+    ).length;
+    const inProgress = items.filter((i) => i.status === 'In Progress').length;
+
+    // Calculate completion rate
+    const completionRate =
+      total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    // Placeholder values for demo - these would come from the backend in production
+    return {
+      totalWorkOrders: total,
+      completedWorkOrders: completed,
+      averageCompletionTime: 18.5, // hours - placeholder
+      completionRate,
+      rating: 4.5, // placeholder
+      pendingWorkOrders: pending,
+      inProgressWorkOrders: inProgress,
+      totalEarnings: 12500, // placeholder
+      thisMonthEarnings: 2400, // placeholder
+      completionRateChange: 5, // percentage increase - placeholder
+      averageTimeChange: -2.3, // hours faster - placeholder
+    };
   }, [items]);
 
   const load = useCallback(async () => {
@@ -126,7 +163,7 @@ export default function VendorDashboardPage() {
 
   const withAction = async (
     item: VendorWorkOrderItem,
-    next: 'accept' | 'complete' | 'estimate'
+    next: 'accept' | 'complete' | 'estimate',
   ) => {
     if (!accessToken) return;
     try {
@@ -155,8 +192,8 @@ export default function VendorDashboardPage() {
           next === 'accept'
             ? 'Work order accepted'
             : next === 'complete'
-            ? 'Work order marked as completed'
-            : 'Work order flagged for estimate',
+              ? 'Work order marked as completed'
+              : 'Work order flagged for estimate',
       });
       await load();
     } catch (e: any) {
@@ -203,6 +240,11 @@ export default function VendorDashboardPage() {
         />
       </div>
 
+      {/* Performance Metrics Section */}
+      <div className='mt-8'>
+        <VendorPerformanceCard metrics={performanceMetrics} />
+      </div>
+
       {/* Table */}
       <div className='mt-8'>
         {loading && (
@@ -228,16 +270,39 @@ export default function VendorDashboardPage() {
               items={items}
               onView={(item) => {
                 setSelectedWorkOrder(item);
+                setDetailInitialTab(undefined);
+                setViewOpen(true);
+              }}
+              onChat={(item) => {
+                setSelectedWorkOrder(item);
+                setDetailInitialTab('chat');
                 setViewOpen(true);
               }}
               onAccept={(i) => withAction(i, 'accept')}
               onComplete={(i) => withAction(i, 'complete')}
               onNeedsEstimate={(i) => withAction(i, 'estimate')}
             />
-            <ViewWorkOrder
+            <VendorWorkOrderDetail
               workOrder={selectedWorkOrder}
               open={viewOpen}
               onOpenChange={setViewOpen}
+              accessToken={accessToken}
+              currentUserId={userId}
+              currentUserName={
+                session?.user?.name ||
+                [
+                  (session as any)?.user?.firstName,
+                  (session as any)?.user?.lastName,
+                ]
+                  .filter(Boolean)
+                  .join(' ') ||
+                undefined
+              }
+              currentUserRole={(session as any)?.user?.role || 'vendor'}
+              initialTab={detailInitialTab}
+              onEstimateCreated={load}
+              onInvoiceCreated={load}
+              onToast={addToast}
             />
           </>
         )}

@@ -5,13 +5,21 @@ import VendorWorkOrdersTable, {
   VendorWorkOrderItem,
   VendorOrderStatus,
 } from '@/components/dashboard/VendorWorkOrdersTable';
-import ViewWorkOrder from '@/components/dashboard/ViewWorkOrder';
+import VendorWorkOrderDetail from '@/components/dashboard/VendorWorkOrderDetail';
+import EstimateForm from '@/components/dashboard/EstimateForm';
+import WorkOrderChat from '@/components/dashboard/WorkOrderChat';
+import {
+  CustomDialog,
+  CustomDialogHeader,
+  CustomDialogBody,
+} from '@/components/ui/custom-dialog';
 import {
   fetchComplaints,
   RawComplaint,
   updateComplaintStatus,
   acceptWorkOrder,
 } from '@/lib/api/complaints';
+import { createEstimate } from '@/lib/api/estimates';
 import { ApiError } from '@/lib/api/auth';
 import { useToast } from '@/components/ui/toast';
 
@@ -87,6 +95,17 @@ export default function VendorWorkOrdersPage() {
   const [selectedWorkOrder, setSelectedWorkOrder] =
     useState<VendorWorkOrderItem | null>(null);
 
+  // Standalone estimate form state
+  const [estimateFormOpen, setEstimateFormOpen] = useState(false);
+  const [estimateWorkOrder, setEstimateWorkOrder] =
+    useState<VendorWorkOrderItem | null>(null);
+  const [creatingEstimate, setCreatingEstimate] = useState(false);
+
+  // Standalone chat dialog state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatWorkOrder, setChatWorkOrder] =
+    useState<VendorWorkOrderItem | null>(null);
+
   const load = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
@@ -115,18 +134,16 @@ export default function VendorWorkOrdersPage() {
 
   const withAction = async (
     item: VendorWorkOrderItem,
-    next: 'accept' | 'complete' | 'estimate'
+    next: 'accept' | 'complete' | 'estimate',
   ) => {
     if (!accessToken) return;
     try {
       if (next === 'accept') {
-        // Use dedicated accept work order endpoint
         await acceptWorkOrder({
           token: accessToken,
           id: String(item.id),
         });
       } else {
-        // Use status update endpoint for complete and estimate
         const statusByAction: Record<'complete' | 'estimate', string> = {
           complete: 'completed',
           estimate: 'estimate-needed',
@@ -144,13 +161,42 @@ export default function VendorWorkOrdersPage() {
           next === 'accept'
             ? 'Work order accepted'
             : next === 'complete'
-            ? 'Work order marked as completed'
-            : 'Work order flagged for estimate',
+              ? 'Work order marked as completed'
+              : 'Work order flagged for estimate',
       });
       await load();
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Update failed';
       addToast({ variant: 'error', title: 'Action failed', description: msg });
+    }
+  };
+
+  const handleCreateEstimate = async (data: {
+    amount: number;
+    description: string;
+    attachment?: File | null;
+  }) => {
+    if (!estimateWorkOrder || !accessToken) return;
+    setCreatingEstimate(true);
+    try {
+      await createEstimate({
+        token: accessToken,
+        workOrderId: String(estimateWorkOrder.id),
+        payload: data,
+      });
+      addToast({
+        variant: 'success',
+        title: 'Estimate Created',
+        description: 'Your estimate has been created successfully.',
+      });
+      setEstimateFormOpen(false);
+      await load();
+    } catch (e: any) {
+      const msg =
+        e instanceof ApiError ? e.message : 'Failed to create estimate';
+      addToast({ variant: 'error', title: 'Error', description: msg });
+    } finally {
+      setCreatingEstimate(false);
     }
   };
 
@@ -181,15 +227,68 @@ export default function VendorWorkOrdersPage() {
               setSelectedWorkOrder(item);
               setViewOpen(true);
             }}
+            onChat={(item) => {
+              setChatWorkOrder(item);
+              setChatOpen(true);
+            }}
+            onAddEstimate={(item) => {
+              setEstimateWorkOrder(item);
+              setEstimateFormOpen(true);
+            }}
             onAccept={(i) => withAction(i, 'accept')}
             onComplete={(i) => withAction(i, 'complete')}
             onNeedsEstimate={(i) => withAction(i, 'estimate')}
           />
-          <ViewWorkOrder
+          <VendorWorkOrderDetail
             workOrder={selectedWorkOrder}
             open={viewOpen}
             onOpenChange={setViewOpen}
           />
+
+          {/* Standalone Estimate Form */}
+          <EstimateForm
+            workOrderId={String(estimateWorkOrder?.id || '')}
+            workOrderDescription={estimateWorkOrder?.complaint || ''}
+            open={estimateFormOpen}
+            onOpenChange={setEstimateFormOpen}
+            onSubmit={handleCreateEstimate}
+            isLoading={creatingEstimate}
+          />
+
+          {/* Standalone Chat Dialog */}
+          <CustomDialog
+            open={chatOpen}
+            onOpenChange={setChatOpen}
+            className='max-w-lg'
+          >
+            <CustomDialogHeader title='Chat' />
+            <CustomDialogBody className='flex flex-col'>
+              <div className='flex-1 min-h-0 flex flex-col'>
+                {accessToken && chatWorkOrder ? (
+                  <WorkOrderChat
+                    complaintId={String(chatWorkOrder.id)}
+                    accessToken={accessToken}
+                    currentUserId={userId}
+                    currentUserName={
+                      session?.user?.name ||
+                      [
+                        (session as any)?.user?.firstName,
+                        (session as any)?.user?.lastName,
+                      ]
+                        .filter(Boolean)
+                        .join(' ') ||
+                      undefined
+                    }
+                    currentUserRole={(session as any)?.user?.role || 'vendor'}
+                  />
+                ) : (
+                  <div className='text-center py-8 text-[#BDBDBE]'>
+                    Please sign in to use chat.
+                  </div>
+                )}
+              </div>
+            </CustomDialogBody>
+          </CustomDialog>
         </>
       )}
     </div>

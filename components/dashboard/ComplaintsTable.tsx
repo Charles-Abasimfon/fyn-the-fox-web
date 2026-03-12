@@ -30,6 +30,7 @@ import {
   CalendarCheck,
   Trash2,
   ChevronDown,
+  MessageSquare,
 } from 'lucide-react';
 import ViewComplaint from './ViewComplaint';
 import AssignComplaint from './AssignComplaint';
@@ -79,6 +80,7 @@ interface ComplaintsTableProps {
   }) => void;
   onScheduleSet?: (payload: { complaint: Complaint; date: string }) => void;
   onEditWorkOrder?: (c: Complaint) => void | Promise<void>;
+  onChat?: (c: Complaint) => void | Promise<void>;
   onRetractVendorFromProperty?: (payload: {
     complaint: Complaint;
   }) => void | Promise<void>;
@@ -131,10 +133,11 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
   onAssignVendor,
   onScheduleSet,
   onEditWorkOrder,
+  onChat,
   onRetractVendorFromProperty,
 }) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
-    null
+    null,
   );
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -184,7 +187,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
 
   const dateLabel = useMemo(
     () => (date ? formatDate(date) : 'Custom date'),
-    [date]
+    [date],
   );
 
   // Light client-side filtering based on selected status and date range
@@ -404,7 +407,7 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                     <td className='py-4 px-4'>
                       <span
                         className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] text-xs font-medium border ${getStatusStyles(
-                          complaint.status
+                          complaint.status,
                         )}`}
                       >
                         <img
@@ -475,6 +478,14 @@ const ComplaintsTable: React.FC<ComplaintsTableProps> = ({
                             <span className='text-sm font-medium'>
                               Edit Work Order
                             </span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className='bg-[#434343]' />
+                          <DropdownMenuItem
+                            onClick={() => onChat?.(complaint)}
+                            className='py-3 hover:bg-[#FFFFFF12] focus:bg-[#FFFFFF12] hover:text-white focus:text-white'
+                          >
+                            <MessageSquare className='h-4 w-4' />
+                            <span className='text-sm font-medium'>Chat</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className='bg-[#434343]' />
                           <DropdownMenuItem
