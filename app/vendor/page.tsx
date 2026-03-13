@@ -286,23 +286,6 @@ export default function VendorDashboardPage() {
               workOrder={selectedWorkOrder}
               open={viewOpen}
               onOpenChange={setViewOpen}
-              accessToken={accessToken}
-              currentUserId={userId}
-              currentUserName={
-                session?.user?.name ||
-                [
-                  (session as any)?.user?.firstName,
-                  (session as any)?.user?.lastName,
-                ]
-                  .filter(Boolean)
-                  .join(' ') ||
-                undefined
-              }
-              currentUserRole={(session as any)?.user?.role || 'vendor'}
-              initialTab={detailInitialTab}
-              onEstimateCreated={load}
-              onInvoiceCreated={load}
-              onToast={addToast}
             />
           </>
         )}
