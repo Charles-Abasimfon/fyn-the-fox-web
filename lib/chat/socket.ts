@@ -139,9 +139,7 @@ export function sendMessage(
   socket: Socket,
   payload: { complaint_id: string; message: string },
 ) {
-  // Fire-and-forget: the backend closes the WebSocket immediately after
-  // receiving send_message, so ACK-based approaches always fail.
-  // The message IS processed server-side; we confirm via history GET.
+  console.log('[Chat] Emitting send_message | connected:', socket.connected, '| id:', socket.id, '| payload:', JSON.stringify(payload));
   socket.emit('send_message', payload);
 }
 

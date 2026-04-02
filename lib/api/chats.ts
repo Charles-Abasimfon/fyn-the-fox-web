@@ -39,6 +39,8 @@ export async function fetchChatMessages(params: {
   );
   if (cursor) url.searchParams.set('cursor', cursor);
 
+  console.log('[Chat API] Fetching messages from:', url.toString());
+
   const res = await fetchWithAuth(
     url.toString(),
     { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' },
@@ -52,6 +54,8 @@ export async function fetchChatMessages(params: {
     /* ignore */
   }
 
+  console.log('[Chat API] Response status:', res.status, '| Raw JSON:', JSON.stringify(json, null, 2));
+
   if (!res.ok) {
     const msg =
       json?.message || `Failed to fetch chat messages (${res.status})`;
@@ -59,9 +63,18 @@ export async function fetchChatMessages(params: {
   }
 
   if (!json?.data) throw new ApiError('Malformed chat messages response');
-  const messages = Array.isArray(json.data.messages) ? json.data.messages : [];
+
+  // Log the shape of json.data to diagnose mismatches
+  console.log('[Chat API] json.data keys:', Object.keys(json.data), '| json.data.messages is array:', Array.isArray(json.data.messages));
+  // If messages are directly in data (as an array) rather than data.messages, handle both
+  const messages = Array.isArray(json.data.messages)
+    ? json.data.messages
+    : Array.isArray(json.data)
+      ? (json.data as unknown as ChatHistoryMessage[])
+      : [];
+  console.log('[Chat API] Parsed message count:', messages.length);
   return {
     messages,
-    nextCursor: json.data.nextCursor ?? null,
+    nextCursor: (json.data as any).nextCursor ?? null,
   };
 }

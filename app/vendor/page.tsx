@@ -7,6 +7,12 @@ import VendorWorkOrdersTable, {
   VendorOrderStatus,
 } from '@/components/dashboard/VendorWorkOrdersTable';
 import VendorWorkOrderDetail from '@/components/dashboard/VendorWorkOrderDetail';
+import WorkOrderChat from '@/components/dashboard/WorkOrderChat';
+import {
+  CustomDialog,
+  CustomDialogHeader,
+  CustomDialogBody,
+} from '@/components/ui/custom-dialog';
 import VendorPerformanceCard, {
   VendorMetrics,
 } from '@/components/dashboard/VendorPerformanceCard';
@@ -90,9 +96,11 @@ export default function VendorDashboardPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedWorkOrder, setSelectedWorkOrder] =
     useState<VendorWorkOrderItem | null>(null);
-  const [detailInitialTab, setDetailInitialTab] = useState<
-    'details' | 'estimates' | 'invoices' | 'chat' | undefined
-  >(undefined);
+
+  // Standalone chat dialog state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatWorkOrder, setChatWorkOrder] =
+    useState<VendorWorkOrderItem | null>(null);
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -270,13 +278,11 @@ export default function VendorDashboardPage() {
               items={items}
               onView={(item) => {
                 setSelectedWorkOrder(item);
-                setDetailInitialTab(undefined);
                 setViewOpen(true);
               }}
               onChat={(item) => {
-                setSelectedWorkOrder(item);
-                setDetailInitialTab('chat');
-                setViewOpen(true);
+                setChatWorkOrder(item);
+                setChatOpen(true);
               }}
               onAccept={(i) => withAction(i, 'accept')}
               onComplete={(i) => withAction(i, 'complete')}
@@ -287,6 +293,40 @@ export default function VendorDashboardPage() {
               open={viewOpen}
               onOpenChange={setViewOpen}
             />
+
+            {/* Standalone Chat Dialog */}
+            <CustomDialog
+              open={chatOpen}
+              onOpenChange={setChatOpen}
+              className='max-w-lg'
+            >
+              <CustomDialogHeader title='Chat' />
+              <CustomDialogBody className='flex flex-col'>
+                <div className='flex-1 min-h-0 flex flex-col'>
+                  {accessToken && chatWorkOrder ? (
+                    <WorkOrderChat
+                      complaintId={String(chatWorkOrder.id)}
+                      accessToken={accessToken}
+                      currentUserId={userId}
+                      currentUserName={
+                        session?.user?.name ||
+                        [
+                          (session as any)?.user?.firstName,
+                          (session as any)?.user?.lastName,
+                        ]
+                          .filter(Boolean)
+                          .join(' ') ||
+                        undefined
+                      }
+                    />
+                  ) : (
+                    <div className='text-white/50 text-sm text-center py-8'>
+                      Loading chat...
+                    </div>
+                  )}
+                </div>
+              </CustomDialogBody>
+            </CustomDialog>
           </>
         )}
       </div>

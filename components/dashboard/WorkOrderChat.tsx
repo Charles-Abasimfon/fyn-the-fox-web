@@ -74,22 +74,39 @@ function mergeMessages(
   local: ChatMessage[],
 ): ChatMessage[] {
   const byId = new Map<string, ChatMessage>();
-  const withoutId: ChatMessage[] = [];
 
+  // Index all server messages by id
   for (const msg of server) {
     if (msg?.id) byId.set(msg.id, msg);
-    else withoutId.push(msg);
   }
 
+  // Collect local messages that have no id (optimistic / unsent)
+  const optimistic: ChatMessage[] = [];
   for (const msg of local) {
     if (msg?.id) {
+      // Only keep local id-messages the server doesn't know about yet
       if (!byId.has(msg.id)) byId.set(msg.id, msg);
     } else {
-      withoutId.push(msg);
+      optimistic.push(msg);
     }
   }
 
-  const merged = [...byId.values(), ...withoutId];
+  // For each optimistic message, check if a matching server message exists.
+  // Match by: same sender_id + same message text + timestamps within 60s.
+  // If matched, the server version (with id) wins and the optimistic copy is dropped.
+  const unmatchedOptimistic = optimistic.filter((opt) => {
+    const optMs = toMillis(opt);
+    return !Array.from(byId.values()).some((srv) => {
+      if (srv.sender_id !== opt.sender_id) return false;
+      if (srv.message !== opt.message) return false;
+      const srvMs = toMillis(srv);
+      // If either timestamp is missing, match on text + sender alone
+      if (!optMs || !srvMs) return true;
+      return Math.abs(srvMs - optMs) < 60_000;
+    });
+  });
+
+  const merged = [...byId.values(), ...unmatchedOptimistic];
   merged.sort((a, b) => toMillis(a) - toMillis(b));
   return merged;
 }
